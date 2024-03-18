@@ -1,0 +1,7 @@
+.vscode
+WORK
+LST
+OBJ
+*.EXE
+*.MAP
+*.LNK
