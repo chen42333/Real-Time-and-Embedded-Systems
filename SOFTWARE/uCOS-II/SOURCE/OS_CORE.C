@@ -68,6 +68,11 @@ static  void  OS_InitTaskIdle(void);
 static  void  OS_InitTaskStat(void);
 static  void  OS_InitTCBList(void);
 
+// for Lab1
+#if BOARD == 0
+char buf[50];
+#endif
+
 /*$PAGE*/
 /*
 *********************************************************************************************************
@@ -175,7 +180,6 @@ void  OSIntExit (void)
     OS_CPU_SR  cpu_sr;
 #endif
     
-    
     if (OSRunning == TRUE) {
         OS_ENTER_CRITICAL();
         if (OSIntNesting > 0) {                            /* Prevent OSIntNesting from wrapping       */
@@ -185,6 +189,15 @@ void  OSIntExit (void)
             OSIntExitY    = OSUnMapTbl[OSRdyGrp];          /* ... and not locked.                      */
             OSPrioHighRdy = (INT8U)((OSIntExitY << 3) + OSUnMapTbl[OSRdyTbl[OSIntExitY]]);
             if (OSPrioHighRdy != OSPrioCur) {              /* No Ctx Sw if current task is highest rdy */
+                // for Lab1
+                #if BOARD == 1
+                printf("%5lu\tPreempt\t\t%2hhu\t%2hhu\n", OSTimeGet(), OSPrioCur, OSPrioHighRdy);
+                #else
+                sprintf(buf, "%10lu Preempt %2hhu %2hhu", OSTimeGet(), OSPrioCur, OSPrioHighRdy);
+                if(OSTimeGet() < 15) PC_DispStr(0, OSTimeGet() + 7, buf, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
+                else PC_DispStr(0, 5, buf, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
+                #endif
+                
                 OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy];
                 OSCtxSwCtr++;                              /* Keep track of the number of ctx switches */
                 OSIntCtxSw();                              /* Perform interrupt level ctx switch       */
@@ -393,6 +406,10 @@ void  OSTimeTick (void)
             OS_EXIT_CRITICAL();
         }
     }
+    // for Lab1
+    OS_ENTER_CRITICAL();
+    OSTCBCur->compTime--;
+    OS_EXIT_CRITICAL();
 }
 /*$PAGE*/
 /*
@@ -879,6 +896,15 @@ void  OS_Sched (void)
         y             = OSUnMapTbl[OSRdyGrp];          /* Get pointer to HPT ready to run              */
         OSPrioHighRdy = (INT8U)((y << 3) + OSUnMapTbl[OSRdyTbl[y]]);
         if (OSPrioHighRdy != OSPrioCur) {              /* No Ctx Sw if current task is highest rdy     */
+            // for Lab1
+            #if BOARD == 1
+            printf("%5lu\tComplete\t%2hhu\t%2hhu\n", OSTimeGet(), fromPrio, toPrio);
+            #else
+            sprintf(buf, "%10lu Complete %2hhu %2hhu", OSTimeGet(), OSPrioCur, OSPrioHighRdy);
+            if(OSTimeGet() < 15) PC_DispStr(0, OSTimeGet() + 7, buf, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
+            else PC_DispStr(0, 5, buf, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
+            #endif
+            
             OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
             OSCtxSwCtr++;                              /* Increment context switch counter             */
             OS_TASK_SW();                              /* Perform a context switch                     */
