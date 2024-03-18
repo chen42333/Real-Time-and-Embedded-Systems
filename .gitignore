@@ -1,7 +1,2 @@
 .vscode
-WORK
-LST
-OBJ
-*.EXE
-*.MAP
-*.LNK
+.DS_Store
