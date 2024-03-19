@@ -33,7 +33,7 @@
 *                        this function to either:
 *
 *                        OS_NO_ERR            if the memory partition has been created correctly.
-*                        OS_MEM_INVALID_ADDR  you are specifying an invalid address for the memory 
+*                        OS_MEM_INVALID_ADDR  you are specifying an invalid address for the memory
 *                                             storage of the partition.
 *                        OS_MEM_INVALID_PART  no free partitions available
 *                        OS_MEM_INVALID_BLKS  user specified an invalid number of blocks (must be >= 2)
@@ -49,7 +49,7 @@ OS_MEM  *OSMemCreate (void *addr, INT32U nblks, INT32U blksize, INT8U *err)
 {
 #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     OS_MEM    *pmem;
     INT8U     *pblk;
     void     **plink;
@@ -121,7 +121,7 @@ void  *OSMemGet (OS_MEM *pmem, INT8U *err)
 {
 #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     void      *pblk;
 
 
@@ -156,7 +156,7 @@ void  *OSMemGet (OS_MEM *pmem, INT8U *err)
 *               pblk    is a pointer to the memory block being released.
 *
 * Returns     : OS_NO_ERR            if the memory block was inserted into the partition
-*               OS_MEM_FULL          if you are returning a memory block to an already FULL memory 
+*               OS_MEM_FULL          if you are returning a memory block to an already FULL memory
 *                                    partition (You freed more blocks than you allocated!)
 *               OS_MEM_INVALID_PMEM  if you passed a NULL pointer for 'pmem'
 *               OS_MEM_INVALID_PBLK  if you passed a NULL pointer for the block to release.
@@ -167,9 +167,9 @@ INT8U  OSMemPut (OS_MEM  *pmem, void *pblk)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
-    
-    
+#endif
+
+
 #if OS_ARG_CHK_EN > 0
     if (pmem == (OS_MEM *)0) {                   /* Must point to a valid memory partition             */
         return (OS_MEM_INVALID_PMEM);
@@ -213,9 +213,9 @@ INT8U  OSMemQuery (OS_MEM *pmem, OS_MEM_DATA *pdata)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
-    
-    
+#endif
+
+
 #if OS_ARG_CHK_EN > 0
     if (pmem == (OS_MEM *)0) {                   /* Must point to a valid memory partition             */
         return (OS_MEM_INVALID_PMEM);

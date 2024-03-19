@@ -343,7 +343,7 @@ INT8U  OSTaskCreateExt (void   (*task)(void *pd),
 *                    c) by preventing OSTimeTick() from making the task ready to run.
 *                 The task can then be 'unlinked' from the miscellaneous structures in uC/OS-II.
 *              2) The function OS_Dummy() is called after OS_EXIT_CRITICAL() because, on most processors,
-*                 the next instruction following the enable interrupt instruction is ignored.  
+*                 the next instruction following the enable interrupt instruction is ignored.
 *              3) An ISR cannot delete a task.
 *              4) The lock nesting counter is incremented because, for a brief instant, if the current
 *                 task is being deleted, the current task would not be able to be rescheduled because it
@@ -362,7 +362,7 @@ INT8U  OSTaskDel (INT8U prio)
 
 #if OS_EVENT_EN > 0
     OS_EVENT     *pevent;
-#endif    
+#endif
 #if (OS_VERSION >= 251) && (OS_FLAG_EN > 0) && (OS_MAX_FLAGS > 0)
     OS_FLAG_NODE *pnode;
 #endif

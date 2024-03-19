@@ -135,7 +135,7 @@ void  OSInit (void)
 *
 * Notes      : 1) This function should be called ith interrupts already disabled
 *              2) Your ISR can directly increment OSIntNesting without calling this function because
-*                 OSIntNesting has been declared 'global'.  
+*                 OSIntNesting has been declared 'global'.
 *              3) You MUST still call OSIntExit() even though you increment OSIntNesting directly.
 *              4) You MUST invoke OSIntEnter() and OSIntExit() in pair.  In other words, for every call
 *                 to OSIntEnter() at the beginning of the ISR you MUST have a call to OSIntExit() at the
@@ -179,7 +179,7 @@ void  OSIntExit (void)
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr;
 #endif
-    
+
     if (OSRunning == TRUE) {
         OS_ENTER_CRITICAL();
         if (OSIntNesting > 0) {                            /* Prevent OSIntNesting from wrapping       */
@@ -201,7 +201,7 @@ void  OSIntExit (void)
                 if(OSTimeGet() < 15) PC_DispStr(0, OSTimeGet() + 7, buf, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
                 else PC_DispStr(0, 5, buf, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
                 #endif
-                
+
                 OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy];
                 OSCtxSwCtr++;                              /* Keep track of the number of ctx switches */
                 OSIntCtxSw();                              /* Perform interrupt level ctx switch       */
@@ -232,9 +232,9 @@ void  OSSchedLock (void)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
-    
-    
+#endif
+
+
     if (OSRunning == TRUE) {                     /* Make sure multitasking is running                  */
         OS_ENTER_CRITICAL();
         if (OSLockNesting < 255) {               /* Prevent OSLockNesting from wrapping back to 0      */
@@ -243,7 +243,7 @@ void  OSSchedLock (void)
         OS_EXIT_CRITICAL();
     }
 }
-#endif    
+#endif
 
 /*$PAGE*/
 /*
@@ -266,9 +266,9 @@ void  OSSchedUnlock (void)
 {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr;
-#endif    
-    
-    
+#endif
+
+
     if (OSRunning == TRUE) {                                   /* Make sure multitasking is running    */
         OS_ENTER_CRITICAL();
         if (OSLockNesting > 0) {                               /* Do not decrement if already 0        */
@@ -284,7 +284,7 @@ void  OSSchedUnlock (void)
         }
     }
 }
-#endif    
+#endif
 
 /*$PAGE*/
 /*
@@ -349,9 +349,9 @@ void  OSStatInit (void)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
-    
-    
+#endif
+
+
     OSTimeDly(2);                                /* Synchronize with clock tick                        */
     OS_ENTER_CRITICAL();
     OSIdleCtr    = 0L;                           /* Clear idle counter                                 */
@@ -382,17 +382,17 @@ void  OSTimeTick (void)
 {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     OS_TCB    *ptcb;
 
 
     OSTimeTickHook();                                      /* Call user definable hook                 */
-#if OS_TIME_GET_SET_EN > 0   
+#if OS_TIME_GET_SET_EN > 0
     OS_ENTER_CRITICAL();                                   /* Update the 32-bit tick counter           */
     OSTime++;
     OS_EXIT_CRITICAL();
 #endif
-    if (OSRunning == TRUE) {    
+    if (OSRunning == TRUE) {
         ptcb = OSTCBList;                                  /* Point at first TCB in TCB list           */
         while (ptcb->OSTCBPrio != OS_IDLE_PRIO) {          /* Go through all TCBs in TCB list          */
             OS_ENTER_CRITICAL();
@@ -675,7 +675,7 @@ static  void  OS_InitEventList (void)
 
 static  void  OS_InitMisc (void)
 {
-#if OS_TIME_GET_SET_EN > 0   
+#if OS_TIME_GET_SET_EN > 0
     OSTime        = 0L;                                          /* Clear the 32-bit system clock            */
 #endif
 
@@ -685,7 +685,7 @@ static  void  OS_InitMisc (void)
     OSTaskCtr     = 0;                                           /* Clear the number of tasks                */
 
     OSRunning     = FALSE;                                       /* Indicate that multitasking not started   */
-    
+
     OSCtxSwCtr    = 0;                                           /* Clear the context switch counter         */
     OSIdleCtr     = 0L;                                          /* Clear the 32-bit idle counter            */
 
@@ -724,7 +724,7 @@ static  void  OS_InitRdyList (void)
     OSPrioCur     = 0;
     OSPrioHighRdy = 0;
 
-    OSTCBHighRdy  = (OS_TCB *)0;                                 
+    OSTCBHighRdy  = (OS_TCB *)0;
     OSTCBCur      = (OS_TCB *)0;
 }
 
@@ -891,7 +891,7 @@ void  OS_Sched (void)
 {
 #if OS_CRITICAL_METHOD == 3                            /* Allocate storage for CPU status register     */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     INT8U      y;
 
 
@@ -912,7 +912,7 @@ void  OS_Sched (void)
             if(OSTimeGet() < 15) PC_DispStr(0, OSTimeGet() + 7, buf, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
             else PC_DispStr(0, 5, buf, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
             #endif
-            
+
             OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
             OSCtxSwCtr++;                              /* Increment context switch counter             */
             OS_TASK_SW();                              /* Perform a context switch                     */
@@ -937,7 +937,7 @@ void  OS_Sched (void)
 *                 and then disabling interrupts didn't allow the processor enough time to have interrupts
 *                 enabled before they were disabled again.  uC/OS-II would thus never recognize
 *                 interrupts.
-*              2) This hook has been added to allow you to do such things as STOP the CPU to conserve 
+*              2) This hook has been added to allow you to do such things as STOP the CPU to conserve
 *                 power.
 *********************************************************************************************************
 */
@@ -946,9 +946,9 @@ void  OS_TaskIdle (void *pdata)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
-    
-    
+#endif
+
+
     pdata = pdata;                               /* Prevent compiler warning for not using 'pdata'     */
     for (;;) {
         OS_ENTER_CRITICAL();
@@ -989,7 +989,7 @@ void  OS_TaskStat (void *pdata)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     INT32U     run;
     INT32U     max;
     INT8S      usage;
@@ -1070,7 +1070,7 @@ INT8U  OS_TCBInit (INT8U prio, OS_STK *ptos, OS_STK *pbos, INT16U id, INT32U stk
 {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     OS_TCB    *ptcb;
 
 
@@ -1124,7 +1124,7 @@ INT8U  OS_TCBInit (INT8U prio, OS_STK *ptos, OS_STK *pbos, INT16U id, INT32U stk
 #endif
 
         OSTaskCreateHook(ptcb);                            /* Call user defined hook                   */
-        
+
         OS_ENTER_CRITICAL();
         OSTCBPrioTbl[prio] = ptcb;
         ptcb->OSTCBNext    = OSTCBList;                    /* Link into TCB chain                      */

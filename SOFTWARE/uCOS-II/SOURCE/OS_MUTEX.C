@@ -60,9 +60,9 @@ INT8U  OSMutexAccept (OS_EVENT *pevent, INT8U *err)
 {
 #if OS_CRITICAL_METHOD == 3                            /* Allocate storage for CPU status register     */
     OS_CPU_SR  cpu_sr;
-#endif    
-    
-    
+#endif
+
+
     if (OSIntNesting > 0) {                            /* Make sure it's not called from an ISR        */
         *err = OS_ERR_PEND_ISR;
         return (0);
@@ -76,9 +76,9 @@ INT8U  OSMutexAccept (OS_EVENT *pevent, INT8U *err)
         *err = OS_ERR_EVENT_TYPE;
         return (0);
     }
-#endif                                                     
+#endif
     OS_ENTER_CRITICAL();							   /* Get value (0 or 1) of Mutex                  */
-    if ((pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8) == OS_MUTEX_AVAILABLE) {     
+    if ((pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8) == OS_MUTEX_AVAILABLE) {
         pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;   /*      Mask off LSByte (Acquire Mutex)         */
         pevent->OSEventCnt |= OSTCBCur->OSTCBPrio;     /*      Save current task priority in LSByte    */
         pevent->OSEventPtr  = (void *)OSTCBCur;        /*      Link TCB of task owning Mutex           */
@@ -90,7 +90,7 @@ INT8U  OSMutexAccept (OS_EVENT *pevent, INT8U *err)
     *err = OS_NO_ERR;
     return (0);
 }
-#endif                                                     
+#endif
 
 /*$PAGE*/
 /*
@@ -112,7 +112,7 @@ INT8U  OSMutexAccept (OS_EVENT *pevent, INT8U *err)
 *                               OS_PRIO_EXIST       if a task at the priority inheritance priority
 *                                                   already exist.
 *                               OS_ERR_PEVENT_NULL  No more event control blocks available.
-*                               OS_PRIO_INVALID     if the priority you specify is higher that the 
+*                               OS_PRIO_INVALID     if the priority you specify is higher that the
 *                                                   maximum allowed (i.e. > OS_LOWEST_PRIO)
 *
 * Returns    : != (void *)0  is a pointer to the event control clock (OS_EVENT) associated with the
@@ -130,7 +130,7 @@ OS_EVENT  *OSMutexCreate (INT8U prio, INT8U *err)
 {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     OS_EVENT  *pevent;
 
 
@@ -148,7 +148,7 @@ OS_EVENT  *OSMutexCreate (INT8U prio, INT8U *err)
     if (OSTCBPrioTbl[prio] != (OS_TCB *)0) {               /* Mutex priority must not already exist    */
         OS_EXIT_CRITICAL();                                /* Task already exist at priority ...       */
         *err = OS_PRIO_EXIST;                              /* ... inheritance priority                 */
-        return ((OS_EVENT *)0);                            
+        return ((OS_EVENT *)0);
     }
     OSTCBPrioTbl[prio] = (OS_TCB *)1;                      /* Reserve the table entry                  */
     pevent             = OSEventFreeList;                  /* Get next free event control block        */
@@ -207,7 +207,7 @@ OS_EVENT  *OSMutexDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     BOOLEAN    tasks_waiting;
     INT8U      pip;
 
@@ -307,7 +307,7 @@ void  OSMutexPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     INT8U      pip;                                        /* Priority Inheritance Priority (PIP)      */
     INT8U      mprio;                                      /* Mutex owner priority                     */
     BOOLEAN    rdy;                                        /* Flag indicating task was ready           */
@@ -400,7 +400,7 @@ INT8U  OSMutexPost (OS_EVENT *pevent)
 {
 #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     INT8U      pip;                                   /* Priority inheritance priority                 */
     INT8U      prio;
 
@@ -414,12 +414,12 @@ INT8U  OSMutexPost (OS_EVENT *pevent)
     }
     if (pevent->OSEventType != OS_EVENT_TYPE_MUTEX) { /* Validate event block type                     */
         return (OS_ERR_EVENT_TYPE);
-    }                                                 
+    }
 #endif
     OS_ENTER_CRITICAL();
     pip  = (INT8U)(pevent->OSEventCnt >> 8);          /* Get priority inheritance priority of mutex    */
     prio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8);  /* Get owner's original priority      */
-    if (OSTCBCur->OSTCBPrio != pip && 
+    if (OSTCBCur->OSTCBPrio != pip &&
         OSTCBCur->OSTCBPrio != prio) {                /* See if posting task owns the MUTEX            */
         OS_EXIT_CRITICAL();
         return (OS_ERR_NOT_MUTEX_OWNER);
@@ -478,7 +478,7 @@ INT8U  OSMutexQuery (OS_EVENT *pevent, OS_MUTEX_DATA *pdata)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     INT8U     *psrc;
     INT8U     *pdest;
 

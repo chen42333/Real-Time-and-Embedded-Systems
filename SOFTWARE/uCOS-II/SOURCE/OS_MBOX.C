@@ -39,7 +39,7 @@ void  *OSMboxAccept (OS_EVENT *pevent)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     void      *msg;
 
 
@@ -79,7 +79,7 @@ OS_EVENT  *OSMboxCreate (void *msg)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     OS_EVENT  *pevent;
 
 
@@ -142,7 +142,7 @@ OS_EVENT  *OSMboxDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
 {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     BOOLEAN    tasks_waiting;
 
 
@@ -239,7 +239,7 @@ void  *OSMboxPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     void      *msg;
 
 
@@ -311,9 +311,9 @@ INT8U  OSMboxPost (OS_EVENT *pevent, void *msg)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
-    
-    
+#endif
+
+
 #if OS_ARG_CHK_EN > 0
     if (pevent == (OS_EVENT *)0) {                    /* Validate 'pevent'                             */
         return (OS_ERR_PEVENT_NULL);
@@ -354,7 +354,7 @@ INT8U  OSMboxPost (OS_EVENT *pevent, void *msg)
 *              msg           is a pointer to the message to send.  You MUST NOT send a NULL pointer.
 *
 *              opt           determines the type of POST performed:
-*                            OS_POST_OPT_NONE         POST to a single waiting task 
+*                            OS_POST_OPT_NONE         POST to a single waiting task
 *                                                     (Identical to OSMboxPost())
 *                            OS_POST_OPT_BROADCAST    POST to ALL tasks that are waiting on the mailbox
 *
@@ -366,7 +366,7 @@ INT8U  OSMboxPost (OS_EVENT *pevent, void *msg)
 *              OS_ERR_PEVENT_NULL   If 'pevent' is a NULL pointer
 *              OS_ERR_POST_NULL_PTR If you are attempting to post a NULL pointer
 *
-* Warning    : Interrupts can be disabled for a long time if you do a 'broadcast'.  In fact, the 
+* Warning    : Interrupts can be disabled for a long time if you do a 'broadcast'.  In fact, the
 *              interrupt disable time is proportional to the number of tasks waiting on the mailbox.
 *********************************************************************************************************
 */
@@ -376,9 +376,9 @@ INT8U  OSMboxPostOpt (OS_EVENT *pevent, void *msg, INT8U opt)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
-    
-    
+#endif
+
+
 #if OS_ARG_CHK_EN > 0
     if (pevent == (OS_EVENT *)0) {                    /* Validate 'pevent'                             */
         return (OS_ERR_PEVENT_NULL);
@@ -393,8 +393,8 @@ INT8U  OSMboxPostOpt (OS_EVENT *pevent, void *msg, INT8U opt)
     OS_ENTER_CRITICAL();
     if (pevent->OSEventGrp != 0x00) {                 /* See if any task pending on mailbox            */
         if ((opt & OS_POST_OPT_BROADCAST) != 0x00) {  /* Do we need to post msg to ALL waiting tasks ? */
-            while (pevent->OSEventGrp != 0x00) {      /* Yes, Post to ALL tasks waiting on mailbox     */           
-                OS_EventTaskRdy(pevent, msg, OS_STAT_MBOX);    
+            while (pevent->OSEventGrp != 0x00) {      /* Yes, Post to ALL tasks waiting on mailbox     */
+                OS_EventTaskRdy(pevent, msg, OS_STAT_MBOX);
             }
         } else {
             OS_EventTaskRdy(pevent, msg, OS_STAT_MBOX);    /* No,  Post to HPT waiting on mbox         */
@@ -436,7 +436,7 @@ INT8U  OSMboxQuery (OS_EVENT *pevent, OS_MBOX_DATA *pdata)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     INT8U     *psrc;
     INT8U     *pdest;
 

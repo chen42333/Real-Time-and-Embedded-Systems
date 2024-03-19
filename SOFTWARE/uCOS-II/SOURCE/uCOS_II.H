@@ -83,13 +83,13 @@
 *                                         EVENT FLAGS
 *********************************************************************************************************
 */
-#define  OS_FLAG_WAIT_CLR_ALL      0        /* Wait for ALL    the bits specified to be CLR (i.e. 0)   */ 
+#define  OS_FLAG_WAIT_CLR_ALL      0        /* Wait for ALL    the bits specified to be CLR (i.e. 0)   */
 #define  OS_FLAG_WAIT_CLR_AND      0
 
 #define  OS_FLAG_WAIT_CLR_ANY      1        /* Wait for ANY of the bits specified to be CLR (i.e. 0)   */
 #define  OS_FLAG_WAIT_CLR_OR       1
 
-#define  OS_FLAG_WAIT_SET_ALL      2        /* Wait for ALL    the bits specified to be SET (i.e. 1)   */ 
+#define  OS_FLAG_WAIT_SET_ALL      2        /* Wait for ALL    the bits specified to be SET (i.e. 1)   */
 #define  OS_FLAG_WAIT_SET_AND      2
 
 #define  OS_FLAG_WAIT_SET_ANY      3        /* Wait for ANY of the bits specified to be SET (i.e. 1)   */
@@ -118,12 +118,12 @@
 *********************************************************************************************************
 */
 #define  OS_POST_OPT_NONE       0x00        /* Post to highest priority task waiting                   */
-#define  OS_POST_OPT_BROADCAST  0x01        /* Broadcast message to ALL tasks waiting                  */  
+#define  OS_POST_OPT_BROADCAST  0x01        /* Broadcast message to ALL tasks waiting                  */
 #define  OS_POST_OPT_FRONT      0x02        /* Post to highest priority task waiting                   */
 
 /*
 *********************************************************************************************************
-*                                 TASK OPTIONS (see OSTaskCreateExt()) 
+*                                 TASK OPTIONS (see OSTaskCreateExt())
 *********************************************************************************************************
 */
 #define  OS_TASK_OPT_STK_CHK  0x0001        /* Enable stack checking for the task                      */
@@ -230,16 +230,16 @@ typedef struct {                            /* Event Flag Group                 
     INT8U         OSFlagType;               /* Should be set to OS_EVENT_TYPE_FLAG                     */
     void         *OSFlagWaitList;           /* Pointer to first NODE of task waiting on event flag     */
     OS_FLAGS      OSFlagFlags;              /* 8, 16 or 32 bit flags                                   */
-} OS_FLAG_GRP;    
+} OS_FLAG_GRP;
 
-    
-    
+
+
 typedef struct {                            /* Event Flag Wait List Node                               */
     void         *OSFlagNodeNext;           /* Pointer to next     NODE in wait list                   */
     void         *OSFlagNodePrev;           /* Pointer to previous NODE in wait list                   */
-    void         *OSFlagNodeTCB;            /* Pointer to TCB of waiting task                          */  
-    void         *OSFlagNodeFlagGrp;        /* Pointer to Event Flag Group                             */  
-    OS_FLAGS      OSFlagNodeFlags;          /* Event flag to wait on                                   */  
+    void         *OSFlagNodeTCB;            /* Pointer to TCB of waiting task                          */
+    void         *OSFlagNodeFlagGrp;        /* Pointer to Event Flag Group                             */
+    OS_FLAGS      OSFlagNodeFlags;          /* Event flag to wait on                                   */
     INT8U         OSFlagNodeWaitType;       /* Type of wait:                                           */
                                             /*      OS_FLAG_WAIT_AND                                   */
                                             /*      OS_FLAG_WAIT_ALL                                   */
@@ -392,7 +392,7 @@ typedef struct os_tcb {
 #if (OS_VERSION >= 251) && (OS_FLAG_EN > 0) && (OS_MAX_FLAGS > 0)
 #if OS_TASK_DEL_EN > 0
     OS_FLAG_NODE  *OSTCBFlagNode;      /* Pointer to event flag node                                   */
-#endif    
+#endif
     OS_FLAGS       OSTCBFlagsRdy;      /* Event flags that made task ready to run                      */
 #endif
 
@@ -474,7 +474,7 @@ OS_EXT  OS_Q             *OSQFreeList;              /* Pointer to list of free Q
 OS_EXT  OS_Q              OSQTbl[OS_MAX_QS];        /* Table of QUEUE control blocks                   */
 #endif
 
-#if OS_TIME_GET_SET_EN > 0   
+#if OS_TIME_GET_SET_EN > 0
 OS_EXT  volatile  INT32U  OSTime;                   /* Current value of system time (in ticks)         */
 #endif
 
@@ -854,7 +854,7 @@ void          OSTickISR(void);
 *********************************************************************************************************
 *                                   LOOK FOR MISSING #define CONSTANTS
 *
-* This section is used to generate ERROR messages at compile time if certain #define constants are 
+* This section is used to generate ERROR messages at compile time if certain #define constants are
 * MISSING in OS_CFG.H.  This allows you to quickly determine the source of the error.
 *
 * You SHOULD NOT change this section UNLESS you would like to add more comments as to the source of the

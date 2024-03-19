@@ -40,7 +40,7 @@ INT16U  OSSemAccept (OS_EVENT *pevent)
 {
 #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     INT16U     cnt;
 
 
@@ -60,7 +60,7 @@ INT16U  OSSemAccept (OS_EVENT *pevent)
     OS_EXIT_CRITICAL();
     return (cnt);                                     /* Return semaphore count                        */
 }
-#endif    
+#endif
 
 /*$PAGE*/
 /*
@@ -84,7 +84,7 @@ OS_EVENT  *OSSemCreate (INT16U cnt)
 {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     OS_EVENT  *pevent;
 
 
@@ -149,7 +149,7 @@ OS_EVENT  *OSSemDel (OS_EVENT *pevent, INT8U opt, INT8U *err)
 {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     BOOLEAN    tasks_waiting;
 
 
@@ -245,7 +245,7 @@ void  OSSemPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 {
 #if OS_CRITICAL_METHOD == 3                           /* Allocate storage for CPU status register      */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
 
 
     if (OSIntNesting > 0) {                           /* See if called from ISR ...                    */
@@ -308,8 +308,8 @@ void  OSSemPend (OS_EVENT *pevent, INT16U timeout, INT8U *err)
 INT8U  OSSemPost (OS_EVENT *pevent)
 {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
-    OS_CPU_SR  cpu_sr;                               
-#endif    
+    OS_CPU_SR  cpu_sr;
+#endif
 
 
 #if OS_ARG_CHK_EN > 0
@@ -359,7 +359,7 @@ INT8U  OSSemQuery (OS_EVENT *pevent, OS_SEM_DATA *pdata)
 {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     INT8U     *psrc;
     INT8U     *pdest;
 

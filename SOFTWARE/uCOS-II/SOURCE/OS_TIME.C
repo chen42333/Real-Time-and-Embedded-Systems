@@ -36,7 +36,7 @@ void  OSTimeDly (INT16U ticks)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
 
 
     if (ticks > 0) {                                                      /* 0 means no delay!         */
@@ -139,7 +139,7 @@ INT8U  OSTimeDlyResume (INT8U prio)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     OS_TCB    *ptcb;
 
 
@@ -168,7 +168,7 @@ INT8U  OSTimeDlyResume (INT8U prio)
     OS_EXIT_CRITICAL();
     return (OS_TASK_NOT_EXIST);                            /* The task does not exist                  */
 }
-#endif    
+#endif
 /*$PAGE*/
 /*
 *********************************************************************************************************
@@ -188,7 +188,7 @@ INT32U  OSTimeGet (void)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
     INT32U     ticks;
 
 
@@ -197,7 +197,7 @@ INT32U  OSTimeGet (void)
     OS_EXIT_CRITICAL();
     return (ticks);
 }
-#endif    
+#endif
 
 /*
 *********************************************************************************************************
@@ -216,11 +216,11 @@ void  OSTimeSet (INT32U ticks)
 {
 #if OS_CRITICAL_METHOD == 3                      /* Allocate storage for CPU status register           */
     OS_CPU_SR  cpu_sr;
-#endif    
+#endif
 
 
     OS_ENTER_CRITICAL();
     OSTime = ticks;
     OS_EXIT_CRITICAL();
 }
-#endif    
+#endif
