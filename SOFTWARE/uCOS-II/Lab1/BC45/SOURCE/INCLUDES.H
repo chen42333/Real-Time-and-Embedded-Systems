@@ -10,7 +10,9 @@
 *********************************************************************************************************
 */
 
-#define BOARD 0
+#define BOARD 1
+#define COMPLETE 0
+#define PREEMPT 1
 
 #include    <stdio.h>
 #include    <string.h>

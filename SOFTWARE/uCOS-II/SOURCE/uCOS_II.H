@@ -481,6 +481,14 @@ OS_EXT  volatile  INT32U  OSTime;                   /* Current value of system t
 extern  INT8U  const      OSMapTbl[];               /* Priority->Bit Mask lookup table                 */
 extern  INT8U  const      OSUnMapTbl[];             /* Priority->Index    lookup table                 */
 
+struct info{
+    long time;
+    int event;
+    INT8U from, to;
+};
+extern struct info buf[];
+extern int idx;
+
 /*$PAGE*/
 /*
 *********************************************************************************************************

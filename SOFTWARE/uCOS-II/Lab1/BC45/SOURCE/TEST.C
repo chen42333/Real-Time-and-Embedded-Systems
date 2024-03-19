@@ -33,6 +33,8 @@ INT8U         TaskData[N_TASKS];                      /* Parameters to pass to e
 OS_EVENT     *RandomSem;
 
 INT16U TaskSet[3][2] = {{1,3}, {3,6}, {4,9}};
+struct info buf[256];
+int idx = 0;
 
 /*
 *********************************************************************************************************
@@ -226,7 +228,8 @@ void  Task (void *pdata)
     int toDelay;
     int c = TaskSet[*(INT8U*)pdata][0];
     int p = TaskSet[*(INT8U*)pdata][1];
-    int idx = *(INT8U*)pdata + 1;
+    int index = *(INT8U*)pdata + 1;
+    int i;
     while (1) {
         while (OSTCBCur->compTime > 0);
         toDelay = p - (OSTimeGet() - start);
@@ -235,12 +238,19 @@ void  Task (void *pdata)
         if (toDelay >= 0) OSTimeDly(toDelay);
         else {
             #if BOARD == 1
-            printf("time:%lu task%hhu exceed line\n", OSTimeGet(), idx);
+            printf("time:%lu task%hhu exceed line\n", OSTimeGet(), index);
             #else
             char s[35];
-            sprintf(s, "%10lu [Task %hhu] Violate", OSTimeGet(), idx);
+            sprintf(s, "%10lu [Task %hhu] Violate", OSTimeGet(), index);
             PC_DispStr(0, 6, s, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
             #endif
         }
+        OS_ENTER_CRITICAL();
+        for (i = 0; i < idx; i++) {
+            printf("%lu\t%s\t%2hhu\t%2hhu\n",
+                buf[i].time, buf[i].event == COMPLETE ? "Complete" : "\tPreempt", buf[i].from, buf[i].to);
+        }
+        idx = 0;
+        OS_EXIT_CRITICAL();
     }
 }

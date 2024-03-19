@@ -191,7 +191,11 @@ void  OSIntExit (void)
             if (OSPrioHighRdy != OSPrioCur) {              /* No Ctx Sw if current task is highest rdy */
                 // for Lab1
                 #if BOARD == 1
-                printf("%5lu\tPreempt\t\t%2hhu\t%2hhu\n", OSTimeGet(), OSPrioCur, OSPrioHighRdy);
+                buf[idx].time = OSTimeGet();
+                buf[idx].event = PREEMPT;
+                buf[idx].from = OSPrioCur;
+                buf[idx].to = OSPrioHighRdy;
+                idx++;
                 #else
                 sprintf(buf, "%10lu Preempt %2hhu %2hhu", OSTimeGet(), OSPrioCur, OSPrioHighRdy);
                 if(OSTimeGet() < 15) PC_DispStr(0, OSTimeGet() + 7, buf, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
@@ -898,7 +902,11 @@ void  OS_Sched (void)
         if (OSPrioHighRdy != OSPrioCur) {              /* No Ctx Sw if current task is highest rdy     */
             // for Lab1
             #if BOARD == 1
-            printf("%5lu\tComplete\t%2hhu\t%2hhu\n", OSTimeGet(), fromPrio, toPrio);
+            buf[idx].time = OSTimeGet();
+            buf[idx].event = COMPLETE;
+            buf[idx].from = OSPrioCur;
+            buf[idx].to = OSPrioHighRdy;
+            idx++;
             #else
             sprintf(buf, "%10lu Complete %2hhu %2hhu", OSTimeGet(), OSPrioCur, OSPrioHighRdy);
             if(OSTimeGet() < 15) PC_DispStr(0, OSTimeGet() + 7, buf, DISP_FGND_BLACK + DISP_BGND_LIGHT_GRAY);
