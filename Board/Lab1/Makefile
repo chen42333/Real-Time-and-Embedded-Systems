@@ -140,7 +140,7 @@ ACDS_VERSION := 11.0sp1
 ELF := Lab1.elf
 
 # Paths to C, C++, and assembly source files.
-C_SRCS := hello_ucosii.c
+C_SRCS := periodic-task-emulation.c
 CXX_SRCS :=
 ASM_SRCS :=
 

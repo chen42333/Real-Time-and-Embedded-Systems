@@ -26,6 +26,9 @@
 #include <ucos_ii.h>
 #endif
 
+struct info buf[256];
+int idx = 0;
+
 /*
 *********************************************************************************************************
 *                                       PRIORITY RESOLUTION TABLE
@@ -665,7 +668,14 @@ void  OSIntExit (void)
             if (OSLockNesting == 0) {                      /* ... and not locked.                      */
                 OS_SchedNew();
                 if (OSPrioHighRdy != OSPrioCur) {          /* No Ctx Sw if current task is highest rdy */
-                    OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy];
+                    // Lab1
+                	buf[idx].time = OSTimeGet();
+                    buf[idx].event = PREEMPT;
+                    buf[idx].from = OSPrioCur;
+                    buf[idx].to = OSPrioHighRdy;
+                    idx++;
+
+                	OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy];
 #if OS_TASK_PROFILE_EN > 0
                     OSTCBHighRdy->OSTCBCtxSwCtr++;         /* Inc. # of context switches to this task  */
 #endif
@@ -912,9 +922,21 @@ void  OSTimeTick (void)
                     }
                 }
             }
+            // for Lab1
+            if (ptcb->deadline != 0 && OSTimeGet() >= ptcb->deadline) {
+                buf[idx].time = OSTimeGet();
+                buf[idx].event = EXCEED;
+                buf[idx].from = ptcb->OSTCBPrio;
+                idx++;
+            }
+
             ptcb = ptcb->OSTCBNext;                        /* Point at next TCB in TCB list                */
             OS_EXIT_CRITICAL();
         }
+        // for Lab1
+        OS_ENTER_CRITICAL();
+        OSTCBCur->compTime--;
+        OS_EXIT_CRITICAL();
     }
 }
 
@@ -1620,7 +1642,14 @@ void  OS_Sched (void)
         if (OSLockNesting == 0) {                      /* ... scheduler is not locked                  */
             OS_SchedNew();
             if (OSPrioHighRdy != OSPrioCur) {          /* No Ctx Sw if current task is highest rdy     */
-                OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
+                // for Lab1
+                buf[idx].time = OSTimeGet();
+                buf[idx].event = COMPLETE;
+                buf[idx].from = OSPrioCur;
+                buf[idx].to = OSPrioHighRdy;
+                idx++;
+
+            	OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
 #if OS_TASK_PROFILE_EN > 0
                 OSTCBHighRdy->OSTCBCtxSwCtr++;         /* Inc. # of context switches to this task      */
 #endif

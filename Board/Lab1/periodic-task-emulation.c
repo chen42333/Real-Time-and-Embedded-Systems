@@ -4,7 +4,7 @@
 * subject to the License Agreement located at the end of this file below.*
 **************************************************************************
 * Description:                                                           *
-* The following is a simple hello world program running MicroC/OS-II.The * 
+* The following is a simple hello world program running MicroC/OS-II.The *
 * purpose of the design is to be a very simple application that just     *
 * demonstrates MicroC/OS-II running on NIOS II.The design doesn't account*
 * for issues such as checking system call return codes. etc.             *
@@ -33,56 +33,59 @@
 
 /* Definition of Task Stacks */
 #define   TASK_STACKSIZE       2048
-OS_STK    task1_stk[TASK_STACKSIZE];
-OS_STK    task2_stk[TASK_STACKSIZE];
+#define  N_TASKS                  3
 
-/* Definition of Task Priorities */
+OS_STK        TaskStk[N_TASKS][TASK_STACKSIZE];        /* Tasks stacks                                  */
+INT8U         TaskData[N_TASKS];                      /* Parameters to pass to each task               */
 
-#define TASK1_PRIORITY      1
-#define TASK2_PRIORITY      2
+INT16U TaskSet[3][2] = {{1,3}, {3,6}, {4,9}};
 
-/* Prints "Hello World" and sleeps for three seconds */
-void task1(void* pdata)
+void  Task (void *pdata)
 {
-  while (1)
-  { 
-    printf("Hello from task1\n");
-    OSTimeDlyHMSM(0, 0, 3, 0);
-  }
+    int start = OSTimeGet();
+    int toDelay;
+    int id = *(INT8U*)pdata;
+    int c = TaskSet[id][0];
+    int p = TaskSet[id][1];
+    int i;
+    while (1) {
+        while (OSTCBCur->compTime > 0);
+        toDelay = p - (OSTimeGet() - start);
+        start += p;
+        OSTCBCur->compTime = c;
+        OSTCBCur->deadline = start + p;
+        if (toDelay >= 0) OSTimeDly(toDelay);
+        // OS_ENTER_CRITICAL();
+        for (i = 0; i < idx; i++) {
+        	if (buf[i].event == EXCEED) {
+                printf("time:%lu task%hhu exceed line\n", buf[i].time, buf[i].from);
+                OSSchedLock();
+                for (;;);
+        	} else {
+				printf("%lu\t%s\t%2hhu\t%2hhu\n",
+					buf[i].time, buf[i].event == COMPLETE ? "Complete" : "Preempt", buf[i].from, buf[i].to);
+        	}
+        }
+        idx = 0;
+        // OS_EXIT_CRITICAL();
+    }
 }
-/* Prints "Hello World" and sleeps for three seconds */
-void task2(void* pdata)
-{
-  while (1)
-  { 
-    printf("Hello from task2\n");
-    OSTimeDlyHMSM(0, 0, 3, 0);
-  }
-}
+
 /* The main function creates two task and starts multi-tasking */
 int main(void)
 {
-  
-  OSTaskCreateExt(task1,
-                  NULL,
-                  (void *)&task1_stk[TASK_STACKSIZE-1],
-                  TASK1_PRIORITY,
-                  TASK1_PRIORITY,
-                  task1_stk,
-                  TASK_STACKSIZE,
-                  NULL,
-                  0);
-              
-               
-  OSTaskCreateExt(task2,
-                  NULL,
-                  (void *)&task2_stk[TASK_STACKSIZE-1],
-                  TASK2_PRIORITY,
-                  TASK2_PRIORITY,
-                  task2_stk,
-                  TASK_STACKSIZE,
-                  NULL,
-                  0);
+
+    INT8U i;
+    for (i = 0; i < N_TASKS; i++) {
+        TaskData[i] = i;
+        OSTaskCreate(Task, (void *)&TaskData[i], &TaskStk[i][TASK_STACKSIZE - 1], i + 1);
+        OSTCBPrioTbl[i+1]->compTime = TaskSet[i][0];
+        OSTCBPrioTbl[i+1]->deadline = TaskSet[i][1];
+    }
+
+
+  OSTimeSet(0);
+
   OSStart();
   return 0;
 }
