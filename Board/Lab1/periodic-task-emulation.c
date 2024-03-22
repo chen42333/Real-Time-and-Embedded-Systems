@@ -47,7 +47,8 @@ void  Task (void *pdata)
     int id = *(INT8U*)pdata;
     int c = TaskSet[id][0];
     int p = TaskSet[id][1];
-    int i;
+    long time; int event; INT8U from, to;
+
     while (1) {
         while (OSTCBCur->compTime > 0);
         toDelay = p - (OSTimeGet() - start);
@@ -55,19 +56,17 @@ void  Task (void *pdata)
         OSTCBCur->compTime = c;
         OSTCBCur->deadline = start + p;
         if (toDelay >= 0) OSTimeDly(toDelay);
-        // OS_ENTER_CRITICAL();
-        for (i = 0; i < idx; i++) {
-        	if (buf[i].event == EXCEED) {
-                printf("time:%lu task%hhu exceed line\n", buf[i].time, buf[i].from);
+
+        while (pop_info(&time, &event, &from, &to)) {
+        	if (event == EXCEED) {
+                printf("time:%lu task%hhu exceed deadline\n", time, from);
                 OSSchedLock();
                 for (;;);
         	} else {
 				printf("%lu\t%s\t%2hhu\t%2hhu\n",
-					buf[i].time, buf[i].event == COMPLETE ? "Complete" : "Preempt", buf[i].from, buf[i].to);
+					time, event == COMPLETE ? "Complete" : "Preempt", from, to);
         	}
         }
-        idx = 0;
-        // OS_EXIT_CRITICAL();
     }
 }
 
