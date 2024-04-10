@@ -34,7 +34,7 @@
 /* Definition of Task Stacks */
 #define   TASK_STACKSIZE       2048
 
-#define TASKSET 0
+#define TASKSET 1
 #if TASKSET == 0
   #define N_TASKS 2
   INT16U TaskSet[N_TASKS][2] = {{1,3}, {3,5}};
@@ -51,22 +51,14 @@ INT8U         TaskData[N_TASKS];                      /* Parameters to pass to e
 
 void  Task (void *pdata)
 {
-  int start = OSTimeGet();
   int toDelay;
   int id = *(INT8U*)pdata;
   int c = TaskSet[id][0];
   int p = TaskSet[id][1];
   long time; int event; INT8U from, to;
-  printf("task%d\n", id);
 
   while (1) {
     while (OSTCBCur->compTime > 0);
-    toDelay = p - (OSTimeGet() - start);
-    start += p;
-    OSTCBCur->compTime = c;
-    OSTCBCur->deadline = start + p;
-    if (toDelay >= 0) OSTimeDly(toDelay);
-
     while (pop_info(&time, &event, &from, &to)) {
       if (event == EXCEED) {
         printf("time:%lu task%hhu exceed deadline\n", time, from);
@@ -77,12 +69,18 @@ void  Task (void *pdata)
                 time, event == COMPLETE ? "Complete" : "Preempt", from, to);
       }
     }
+
+    toDelay = OSTCBCur->deadline - OSTimeGet();
+    OSTCBCur->compTime = c;
+    OSTCBCur->deadline += p;
+    if (toDelay >= 0) OSTimeDly(toDelay);
   }
 }
 
 /* The main function creates two task and starts multi-tasking */
 int main(void)
 {
+  OSInit();
   INT8U i;
   for (i = 0; i < N_TASKS; i++) {
     TaskData[i] = i;
@@ -91,7 +89,6 @@ int main(void)
     OSTCBPrioTbl[i+1]->deadline = TaskSet[i][1];
   }
 
-  printf("start\n");
   OSTimeSet(0);
   OSStart();
   return 0;

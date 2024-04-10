@@ -33,7 +33,7 @@
 
 /* Definition of Task Stacks */
 #define   TASK_STACKSIZE       2048
-#define  N_TASKS                  3
+#define  N_TASKS                  2
 
 OS_STK        TaskStk[N_TASKS][TASK_STACKSIZE];        /* Tasks stacks                                  */
 INT8U         TaskData[N_TASKS];                      /* Parameters to pass to each task               */

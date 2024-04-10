@@ -713,9 +713,9 @@ void  OSIntExit (void)
                 OS_SchedNew();
                 if (OSPrioHighRdy != OSPrioCur) {          /* No Ctx Sw if current task is highest rdy */
                     // Lab1
-                        push_info(PREEMPT, OSPrioCur, OSPrioHighRdy);
+                    push_info(PREEMPT, OSPrioCur, OSPrioHighRdy);
 
-                        OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy];
+                    OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy];
 #if OS_TASK_PROFILE_EN > 0
                     OSTCBHighRdy->OSTCBCtxSwCtr++;         /* Inc. # of context switches to this task  */
 #endif
@@ -1714,22 +1714,16 @@ void  OS_Sched (void)
 static  void  OS_SchedNew (void)
 {
   // lab2
-  //printf("enter OS_SchedNew");
   OS_TCB* ptcb = OSTCBList;
-  int min_deadline = -1, cnt = 0;
+  int min_deadline = -1;
   while (ptcb != (OS_TCB*)0) {
-      //printf("deadline %d %x\n", ptcb->deadline, ptcb->OSTCBStat);
-      //if (ptcb->OSTCBStat == OS_STAT_RDY) {
-          //printf("ready\n");
-        cnt++;
-        if (min_deadline == -1 || ptcb->deadline < min_deadline) {
-            OSPrioHighRdy = ptcb->OSTCBPrio;
-            min_deadline = ptcb->deadline;
-        }
-      //}
+      if (ptcb->OSTCBDly == 0 &&
+          (min_deadline == -1 || ptcb->deadline < min_deadline)) {
+          OSPrioHighRdy = ptcb->OSTCBPrio;
+          min_deadline = ptcb->deadline;
+      }
       ptcb = ptcb->OSTCBNext;
   }
-  // printf("leave OS_SchedNew %d\n", cnt);
 }
 
 /*$PAGE*/
