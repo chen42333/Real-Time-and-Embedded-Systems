@@ -2005,6 +2005,10 @@ INT8U  OS_TCBInit (INT8U prio, OS_STK *ptos, OS_STK *pbos, INT16U id, INT32U stk
         ptcb->OSTCBStatPend      = OS_STAT_PEND_OK;        /* Clear pend status                        */
         ptcb->OSTCBDly           = 0;                      /* Task is not delayed                      */
 
+        // lab1
+        ptcb->deadline           = 500; // TODO
+        ptcb->compTime           = 0;
+
 #if OS_TASK_CREATE_EXT_EN > 0
         ptcb->OSTCBExtPtr        = pext;                   /* Store pointer to TCB extension           */
         ptcb->OSTCBStkSize       = stk_size;               /* Store stack size                         */
