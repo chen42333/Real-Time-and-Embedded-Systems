@@ -34,8 +34,14 @@
 /* Definition of Task Stacks */
 #define   TASK_STACKSIZE       2048
 
-N_TASKS
-INT16U TaskSet[N_TASKS][2] = {{1,3}, {3,6}, {4,9}};
+#define TASKSET 0
+#if TASKSET == 0
+  #define N_TASKS 2
+  INT16U TaskSet[N_TASKS][2] = {{1,3}, {3,5}};
+#elif TASKSET == 1
+  #define N_TASKS 3
+  INT16U TaskSet[N_TASKS][2] = {{1,4}, {2,5}, {2,10}};
+#endif
 
 OS_STK        TaskStk[N_TASKS][TASK_STACKSIZE];        /* Tasks stacks                                  */
 INT8U         TaskData[N_TASKS];                      /* Parameters to pass to each task               */
@@ -51,6 +57,7 @@ void  Task (void *pdata)
   int c = TaskSet[id][0];
   int p = TaskSet[id][1];
   long time; int event; INT8U from, to;
+  printf("task%d\n", id);
 
   while (1) {
     while (OSTCBCur->compTime > 0);
@@ -77,13 +84,15 @@ void  Task (void *pdata)
 int main(void)
 {
   INT8U i;
-  for (i = 0; i < n_tasks; i++) {
+  for (i = 0; i < N_TASKS; i++) {
     TaskData[i] = i;
     OSTaskCreate(Task, (void *)&TaskData[i], &TaskStk[i][TASK_STACKSIZE - 1], i + 1);
     OSTCBPrioTbl[i+1]->compTime = TaskSet[i][0];
     OSTCBPrioTbl[i+1]->deadline = TaskSet[i][1];
   }
 
+  printf("start\n");
+  OSTimeSet(0);
   OSStart();
   return 0;
 }

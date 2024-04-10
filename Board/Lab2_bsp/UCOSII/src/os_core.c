@@ -1713,29 +1713,23 @@ void  OS_Sched (void)
 
 static  void  OS_SchedNew (void)
 {
-#if OS_LOWEST_PRIO <= 63                         /* See if we support up to 64 tasks                   */
-    INT8U   y;
-
-
-    y             = OSUnMapTbl[OSRdyGrp];
-    OSPrioHighRdy = (INT8U)((y << 3) + OSUnMapTbl[OSRdyTbl[y]]);
-#else                                            /* We support up to 256 tasks                         */
-    INT8U   y;
-    INT16U *ptbl;
-
-
-    if ((OSRdyGrp & 0xFF) != 0) {
-        y = OSUnMapTbl[OSRdyGrp & 0xFF];
-    } else {
-        y = OSUnMapTbl[(OSRdyGrp >> 8) & 0xFF] + 8;
-    }
-    ptbl = &OSRdyTbl[y];
-    if ((*ptbl & 0xFF) != 0) {
-        OSPrioHighRdy = (INT8U)((y << 4) + OSUnMapTbl[(*ptbl & 0xFF)]);
-    } else {
-        OSPrioHighRdy = (INT8U)((y << 4) + OSUnMapTbl[(*ptbl >> 8) & 0xFF] + 8);
-    }
-#endif
+  // lab2
+  //printf("enter OS_SchedNew");
+  OS_TCB* ptcb = OSTCBList;
+  int min_deadline = -1, cnt = 0;
+  while (ptcb != (OS_TCB*)0) {
+      //printf("deadline %d %x\n", ptcb->deadline, ptcb->OSTCBStat);
+      //if (ptcb->OSTCBStat == OS_STAT_RDY) {
+          //printf("ready\n");
+        cnt++;
+        if (min_deadline == -1 || ptcb->deadline < min_deadline) {
+            OSPrioHighRdy = ptcb->OSTCBPrio;
+            min_deadline = ptcb->deadline;
+        }
+      //}
+      ptcb = ptcb->OSTCBNext;
+  }
+  // printf("leave OS_SchedNew %d\n", cnt);
 }
 
 /*$PAGE*/
