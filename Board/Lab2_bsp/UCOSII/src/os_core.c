@@ -26,6 +26,53 @@
 #include <ucos_ii.h>
 #endif
 
+// for lab1
+struct info info_buf[INFO_BUF_SIZE];
+int info_head = 0, info_tail = 0;
+
+BOOLEAN push_info(int event, INT8U from, INT8U to) {
+#if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
+    OS_CPU_SR  cpu_sr = 0;
+#endif
+
+    BOOLEAN ret;
+
+    OS_ENTER_CRITICAL();
+    if (info_tail+1 == info_head) {
+        ret = OS_FALSE;
+    } else {
+        ret = OS_TRUE;
+                info_buf[info_tail].time  = OSTimeGet();
+                info_buf[info_tail].event = event;
+                info_buf[info_tail].from  = from;
+                info_buf[info_tail].to    = to;
+                if (++info_tail == INFO_BUF_SIZE) info_tail = 0;
+    }
+    OS_EXIT_CRITICAL();
+    return ret;
+}
+
+BOOLEAN pop_info(long* time, int* event, INT8U* from, INT8U* to) {
+#if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
+    OS_CPU_SR  cpu_sr = 0;
+#endif
+    BOOLEAN ret;
+
+    OS_ENTER_CRITICAL();
+    if (info_head == info_tail) {
+        ret = OS_FALSE;
+    } else {
+        ret = OS_TRUE;
+                *time  = info_buf[info_head].time;
+                *event = info_buf[info_head].event;
+                *from  = info_buf[info_head].from;
+                *to    = info_buf[info_head].to;
+                if (++info_head == INFO_BUF_SIZE) info_head = 0;
+    }
+    OS_EXIT_CRITICAL();
+    return ret;
+}
+
 /*
 *********************************************************************************************************
 *                                       PRIORITY RESOLUTION TABLE
@@ -478,7 +525,7 @@ INT16U  OSEventPendMulti (OS_EVENT **pevents_pend, OS_EVENT **pevents_rdy, void 
                  OSTCBCur->OSTCBStatPend = OS_STAT_PEND_TO;
                  OS_EventTaskRemoveMulti(OSTCBCur, pevents_pend);
              }
-			 break;
+                         break;
 
         case OS_STAT_PEND_TO:
         default:                                        /* ... remove task from events' wait lists     */
@@ -665,7 +712,10 @@ void  OSIntExit (void)
             if (OSLockNesting == 0) {                      /* ... and not locked.                      */
                 OS_SchedNew();
                 if (OSPrioHighRdy != OSPrioCur) {          /* No Ctx Sw if current task is highest rdy */
-                    OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy];
+                    // Lab1
+                        push_info(PREEMPT, OSPrioCur, OSPrioHighRdy);
+
+                        OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy];
 #if OS_TASK_PROFILE_EN > 0
                     OSTCBHighRdy->OSTCBCtxSwCtr++;         /* Inc. # of context switches to this task  */
 #endif
@@ -912,9 +962,18 @@ void  OSTimeTick (void)
                     }
                 }
             }
+            // for Lab1
+            if (ptcb->deadline != 0 && OSTimeGet() >= ptcb->deadline) {
+                push_info(EXCEED, ptcb->OSTCBPrio, 0);
+            }
+
             ptcb = ptcb->OSTCBNext;                        /* Point at next TCB in TCB list                */
             OS_EXIT_CRITICAL();
         }
+        // for Lab1
+        OS_ENTER_CRITICAL();
+        OSTCBCur->compTime--;
+        OS_EXIT_CRITICAL();
     }
 }
 
@@ -1620,6 +1679,9 @@ void  OS_Sched (void)
         if (OSLockNesting == 0) {                      /* ... scheduler is not locked                  */
             OS_SchedNew();
             if (OSPrioHighRdy != OSPrioCur) {          /* No Ctx Sw if current task is highest rdy     */
+                // for Lab1
+                push_info(COMPLETE, OSPrioCur, OSPrioHighRdy);
+
                 OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
 #if OS_TASK_PROFILE_EN > 0
                 OSTCBHighRdy->OSTCBCtxSwCtr++;         /* Inc. # of context switches to this task      */
