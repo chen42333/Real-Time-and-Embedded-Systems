@@ -30,7 +30,7 @@
 struct info info_buf[INFO_BUF_SIZE];
 int info_head = 0, info_tail = 0;
 
-BOOLEAN push_info(int event, INT8U from, INT8U to) {
+BOOLEAN push_info(int event, INT8U from, INT8U to, INT8U resource) {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr = 0;
 #endif
@@ -46,13 +46,14 @@ BOOLEAN push_info(int event, INT8U from, INT8U to) {
                 info_buf[info_tail].event = event;
                 info_buf[info_tail].from  = from;
                 info_buf[info_tail].to    = to;
+                info_buf[info_tail].resource = resource;
                 if (++info_tail == INFO_BUF_SIZE) info_tail = 0;
     }
     OS_EXIT_CRITICAL();
     return ret;
 }
 
-BOOLEAN pop_info(long* time, int* event, INT8U* from, INT8U* to) {
+BOOLEAN pop_info(long* time, int* event, INT8U* from, INT8U* to, INT8U* resource) {
 #if OS_CRITICAL_METHOD == 3                                /* Allocate storage for CPU status register */
     OS_CPU_SR  cpu_sr = 0;
 #endif
@@ -67,6 +68,7 @@ BOOLEAN pop_info(long* time, int* event, INT8U* from, INT8U* to) {
                 *event = info_buf[info_head].event;
                 *from  = info_buf[info_head].from;
                 *to    = info_buf[info_head].to;
+                *resource = info_buf[info_head].resource;
                 if (++info_head == INFO_BUF_SIZE) info_head = 0;
     }
     OS_EXIT_CRITICAL();
@@ -713,7 +715,7 @@ void  OSIntExit (void)
                 OS_SchedNew();
                 if (OSPrioHighRdy != OSPrioCur) {          /* No Ctx Sw if current task is highest rdy */
                     // Lab1
-                        push_info(PREEMPT, OSPrioCur, OSPrioHighRdy);
+                        push_info(PREEMPT, OSPrioCur, OSPrioHighRdy, 0);
 
                         OSTCBHighRdy  = OSTCBPrioTbl[OSPrioHighRdy];
 #if OS_TASK_PROFILE_EN > 0
@@ -962,15 +964,11 @@ void  OSTimeTick (void)
                     }
                 }
             }
-            // for Lab1
-            if (ptcb->deadline != 0 && OSTimeGet() >= ptcb->deadline) {
-                push_info(EXCEED, ptcb->OSTCBPrio, 0);
-            }
 
             ptcb = ptcb->OSTCBNext;                        /* Point at next TCB in TCB list                */
             OS_EXIT_CRITICAL();
         }
-        // for Lab1
+        // for Lab3
         OS_ENTER_CRITICAL();
         OSTCBCur->compTime--;
         OS_EXIT_CRITICAL();
@@ -1680,7 +1678,7 @@ void  OS_Sched (void)
             OS_SchedNew();
             if (OSPrioHighRdy != OSPrioCur) {          /* No Ctx Sw if current task is highest rdy     */
                 // for Lab1
-                push_info(COMPLETE, OSPrioCur, OSPrioHighRdy);
+                if (OSTCBCur->compTime <= 0) push_info(COMPLETE, OSPrioCur, OSPrioHighRdy, 0);
 
                 OSTCBHighRdy = OSTCBPrioTbl[OSPrioHighRdy];
 #if OS_TASK_PROFILE_EN > 0

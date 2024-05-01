@@ -438,59 +438,60 @@ void  OSMutexPend (OS_EVENT *pevent, INT16U timeout, INT8U *perr)
         pevent->OSEventCnt &= OS_MUTEX_KEEP_UPPER_8;       /* Yes, Acquire the resource                */
         pevent->OSEventCnt |= OSTCBCur->OSTCBPrio;         /*      Save priority of owning task        */
         pevent->OSEventPtr  = (void *)OSTCBCur;            /*      Point to owning task's OS_TCB       */
+        push_info(LOCK, OSPrioCur, OSPrioCur < pip ? OSPrioCur : pip, pip); // for Lab3
         if (OSTCBCur->OSTCBPrio <= pip) {                  /*      PIP 'must' have a SMALLER prio ...  */
             OS_EXIT_CRITICAL();                            /*      ... than current task!              */
             *perr = OS_ERR_PIP_LOWER;
         } else {
             OS_EXIT_CRITICAL();
             *perr = OS_ERR_NONE;
-        }
-        return;
-    }
-    mprio = (INT8U)(pevent->OSEventCnt & OS_MUTEX_KEEP_LOWER_8);  /* No, Get priority of mutex owner   */
-    ptcb  = (OS_TCB *)(pevent->OSEventPtr);                       /*     Point to TCB of mutex owner   */
-    if (ptcb->OSTCBPrio > pip) {                                  /*     Need to promote prio of owner?*/
-        if (mprio > OSTCBCur->OSTCBPrio) {
-            y = ptcb->OSTCBY;
-            if ((OSRdyTbl[y] & ptcb->OSTCBBitX) != 0) {           /*     See if mutex owner is ready   */
-                OSRdyTbl[y] &= ~ptcb->OSTCBBitX;                  /*     Yes, Remove owner from Rdy ...*/
-                if (OSRdyTbl[y] == 0) {                           /*          ... list at current prio */
-                    OSRdyGrp &= ~ptcb->OSTCBBitY;
+
+            // for Lab3
+            ptcb  = OSTCBCur;                       /*     Point to TCB of current task   */
+            if (ptcb->OSTCBPrio > pip) {
+                y = ptcb->OSTCBY;
+                if ((OSRdyTbl[y] & ptcb->OSTCBBitX) != 0) {           /*     See if mutex owner is ready   */
+                    OSRdyTbl[y] &= ~ptcb->OSTCBBitX;                  /*     Yes, Remove owner from Rdy ...*/
+                    if (OSRdyTbl[y] == 0) {                           /*          ... list at current prio */
+                        OSRdyGrp &= ~ptcb->OSTCBBitY;
+                    }
+                    rdy = OS_TRUE;
+                } else {
+                    pevent2 = ptcb->OSTCBEventPtr;
+                    if (pevent2 != (OS_EVENT *)0) {                   /* Remove from event wait list       */
+                        if ((pevent2->OSEventTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0) {
+                            pevent2->OSEventGrp &= ~ptcb->OSTCBBitY;
+                        }
+                    }
+                    rdy = OS_FALSE;                            /* No                                       */
                 }
-                rdy = OS_TRUE;
-            } else {
-                pevent2 = ptcb->OSTCBEventPtr;
-                if (pevent2 != (OS_EVENT *)0) {                   /* Remove from event wait list       */
-                    if ((pevent2->OSEventTbl[ptcb->OSTCBY] &= ~ptcb->OSTCBBitX) == 0) {
-                        pevent2->OSEventGrp &= ~ptcb->OSTCBBitY;
+                ptcb->OSTCBPrio = pip;                         /* Change owner task prio to PIP            */
+                OSPrioCur = pip;
+    #if OS_LOWEST_PRIO <= 63
+                ptcb->OSTCBY    = (INT8U)( ptcb->OSTCBPrio >> 3);
+                ptcb->OSTCBX    = (INT8U)( ptcb->OSTCBPrio & 0x07);
+                ptcb->OSTCBBitY = (INT8U)(1 << ptcb->OSTCBY);
+                ptcb->OSTCBBitX = (INT8U)(1 << ptcb->OSTCBX);
+    #else
+                ptcb->OSTCBY    = (INT8U)((ptcb->OSTCBPrio >> 4) & 0xFF);
+                ptcb->OSTCBX    = (INT8U)( ptcb->OSTCBPrio & 0x0F);
+                ptcb->OSTCBBitY = (INT16U)(1 << ptcb->OSTCBY);
+                ptcb->OSTCBBitX = (INT16U)(1 << ptcb->OSTCBX);
+    #endif
+                if (rdy == OS_TRUE) {                          /* If task was ready at owner's priority ...*/
+                    OSRdyGrp               |= ptcb->OSTCBBitY; /* ... make it ready at new priority.       */
+                    OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
+                } else {
+                    pevent2 = ptcb->OSTCBEventPtr;
+                    if (pevent2 != (OS_EVENT *)0) {            /* Add to event wait list                   */
+                        pevent2->OSEventGrp               |= ptcb->OSTCBBitY;
+                        pevent2->OSEventTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
                     }
                 }
-                rdy = OS_FALSE;                            /* No                                       */
+                OSTCBPrioTbl[pip] = ptcb;
             }
-            ptcb->OSTCBPrio = pip;                         /* Change owner task prio to PIP            */
-#if OS_LOWEST_PRIO <= 63
-            ptcb->OSTCBY    = (INT8U)( ptcb->OSTCBPrio >> 3);
-            ptcb->OSTCBX    = (INT8U)( ptcb->OSTCBPrio & 0x07);
-            ptcb->OSTCBBitY = (INT8U)(1 << ptcb->OSTCBY);
-            ptcb->OSTCBBitX = (INT8U)(1 << ptcb->OSTCBX);
-#else
-            ptcb->OSTCBY    = (INT8U)((ptcb->OSTCBPrio >> 4) & 0xFF);
-            ptcb->OSTCBX    = (INT8U)( ptcb->OSTCBPrio & 0x0F);
-            ptcb->OSTCBBitY = (INT16U)(1 << ptcb->OSTCBY);
-            ptcb->OSTCBBitX = (INT16U)(1 << ptcb->OSTCBX);
-#endif
-            if (rdy == OS_TRUE) {                          /* If task was ready at owner's priority ...*/
-                OSRdyGrp               |= ptcb->OSTCBBitY; /* ... make it ready at new priority.       */
-                OSRdyTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
-            } else {
-                pevent2 = ptcb->OSTCBEventPtr;
-                if (pevent2 != (OS_EVENT *)0) {            /* Add to event wait list                   */
-                    pevent2->OSEventGrp               |= ptcb->OSTCBBitY;
-                    pevent2->OSEventTbl[ptcb->OSTCBY] |= ptcb->OSTCBBitX;
-                }
-            }
-            OSTCBPrioTbl[pip] = ptcb;
         }
+        return;
     }
     OSTCBCur->OSTCBStat     |= OS_STAT_MUTEX;         /* Mutex not available, pend current task        */
     OSTCBCur->OSTCBStatPend  = OS_STAT_PEND_OK;
@@ -575,8 +576,10 @@ INT8U  OSMutexPost (OS_EVENT *pevent)
         OS_EXIT_CRITICAL();
         return (OS_ERR_NOT_MUTEX_OWNER);
     }
+    push_info(UNLOCK, OSTCBCur->OSTCBPrio, OSTCBCur->OSTCBPrio == pip ? prio : OSTCBCur->OSTCBPrio, pip); // for Lab3
     if (OSTCBCur->OSTCBPrio == pip) {                 /* Did we have to raise current task's priority? */
         OSMutex_RdyAtPrio(OSTCBCur, prio);            /* Restore the task's original priority          */
+        OSPrioCur = prio; // for Lab3
     }
     OSTCBPrioTbl[pip] = OS_TCB_RESERVED;              /* Reserve table entry                           */
     if (pevent->OSEventGrp != 0) {                    /* Any task waiting for the mutex?               */

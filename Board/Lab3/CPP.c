@@ -34,60 +34,137 @@
 /* Definition of Task Stacks */
 #define   TASK_STACKSIZE       2048
 
-#define TASKSET 1
-#if TASKSET == 0
-  #define N_TASKS 2
-  INT16U TaskSet[N_TASKS][2] = {{1,3}, {3,5}};
-#elif TASKSET == 1
-  #define N_TASKS 3
-  INT16U TaskSet[N_TASKS][2] = {{1,4}, {2,5}, {2,10}};
+#define SCENARIO 2
+#if SCENARIO == 1
+#define N_TASKS 3
+#elif SCENARIO == 2
+#define N_TASKS 2
 #endif
+#define N_RESOURCES 2
+OS_EVENT*        Mutex[N_RESOURCES];
 
-OS_STK        TaskStk[N_TASKS][TASK_STACKSIZE];        /* Tasks stacks                                  */
+OS_STK        TaskStk[N_TASKS+1][TASK_STACKSIZE];        /* Tasks stacks                                  */
 INT8U         TaskData[N_TASKS];                      /* Parameters to pass to each task               */
 
 /* Definition of Task Priorities */
 
-
-void  Task (void *pdata)
-{
-  int toDelay;
-  int id = *(INT8U*)pdata;
-  int c = TaskSet[id][0];
-  int p = TaskSet[id][1];
-  long time; int event; INT8U from, to;
-
-  while (1) {
-    while (OSTCBCur->compTime > 0);
-    while (pop_info(&time, &event, &from, &to)) {
-      if (event == EXCEED) {
-        printf("time:%lu task%hhu exceed deadline\n", time, from);
-        OSSchedLock();
-        for (;;);
-      } else {
-        printf("%lu\t%s\t%2hhu\t%2hhu\n",
-                time, event == COMPLETE ? "Complete" : "Preempt", from, to);
-      }
+void print() {
+  long time; int event; INT8U from, to, resource;
+  while (pop_info(&time, &event, &from, &to, &resource)) {
+    if (event == EXCEED) {
+      printf("time:%lu task%hhu exceed deadline\n", time, from);
+      OSSchedLock();
+      for (;;);
     }
-
-    toDelay = OSTCBCur->deadline - OSTimeGet();
-    OSTCBCur->compTime = c;
-    OSTCBCur->deadline += p;
-    if (toDelay >= 0) OSTimeDly(toDelay);
+    else if (event == LOCK || event == UNLOCK) printf("%lu\t%s\tR%hhu\t(Prio=%hhu changes to=%hhu)\n",
+        time, event == LOCK ? "Lock" : "Unlock", resource, from, to);
+    else {
+      printf("%lu\t%s\t%2hhu\t%2hhu\n",
+              time, event == COMPLETE ? "Complete" : "Preempt", from, to);
+    }
   }
+}
+
+void S1_H (void* pdata) {
+  OSTCBCur->compTime = 6;
+  INT8U err;
+  OSTimeDly(8); // start time
+  while(OSTCBCur->compTime > 4);
+
+  OSMutexPend(Mutex[0], 128, &err);
+  while(OSTCBCur->compTime > 2) print();
+
+  OSMutexPend(Mutex[1], 128, &err);
+  while(OSTCBCur->compTime > 0) print();
+
+  OSMutexPost(Mutex[1]);
+  OSMutexPost(Mutex[0]);
+  print();
+  OSTimeDly(128);
+}
+
+void S1_L1 (void* pdata) {
+  OSTCBCur->compTime = 6;
+  INT8U err;
+  OSTimeDly(4); // start time
+  while(OSTCBCur->compTime > 4) print();
+
+  OSMutexPend(Mutex[1], 128, &err);
+  while(OSTCBCur->compTime > 0) print();
+
+  OSMutexPost(Mutex[1]);
+  print();
+  OSTimeDly(128);
+}
+
+void S1_L2 (void* pdata) {
+  OSTCBCur->compTime = 9;
+  INT8U err;
+  while(OSTCBCur->compTime > 7) print();
+
+  OSMutexPend(Mutex[0], 128, &err);
+  while(OSTCBCur->compTime > 0) print();
+
+  OSMutexPost(Mutex[0]);
+  print();
+  OSTimeDly(128);
+}
+
+void S2_H (void* pdata) {
+  OSTCBCur->compTime = 11;
+  INT8U err;
+  OSTimeDly(5); // start time
+  while(OSTCBCur->compTime > 9) print();
+
+  OSMutexPend(Mutex[1], 128, &err);
+  while(OSTCBCur->compTime > 6) print();
+
+  OSMutexPend(Mutex[0], 128, &err);
+  while(OSTCBCur->compTime > 3) print();;
+
+  OSMutexPost(Mutex[0]);
+  while(OSTCBCur->compTime > 0) print();;
+
+  OSMutexPost(Mutex[1]);
+  print();
+  OSTimeDly(128);
+}
+
+void S2_L (void* pdata) {
+  OSTCBCur->compTime = 12;
+  INT8U err;
+  while(OSTCBCur->compTime > 10) print();
+
+  OSMutexPend(Mutex[0], 128, &err);
+  while(OSTCBCur->compTime > 4) print();
+
+  OSMutexPend(Mutex[1], 128, &err);
+  while(OSTCBCur->compTime > 2) print();
+
+  OSMutexPost(Mutex[1]);
+  while(OSTCBCur->compTime > 0) print();
+
+  OSMutexPost(Mutex[0]);
+  print();
+  OSTimeDly(128);
 }
 
 /* The main function creates two task and starts multi-tasking */
 int main(void)
 {
   OSInit();
-  INT8U i;
-  for (i = 0; i < N_TASKS; i++) {
-    TaskData[i] = i;
-    OSTaskCreate(Task, (void *)&TaskData[i], &TaskStk[i][TASK_STACKSIZE - 1], i + 1);
-    OSTCBPrioTbl[i+1]->compTime = TaskSet[i][0];
-    OSTCBPrioTbl[i+1]->deadline = TaskSet[i][1];
-  }
+  INT8U err;
+  Mutex[0] = OSMutexCreate(1, &err);
+  Mutex[1] = OSMutexCreate(2, &err);
+#if SCENARIO == 1
+  OSTaskCreate(S1_H, (void *)&TaskData[0], &TaskStk[0][TASK_STACKSIZE - 1], 3);
+  OSTaskCreate(S1_L1, (void *)&TaskData[1], &TaskStk[1][TASK_STACKSIZE - 1], 4);
+  OSTaskCreate(S1_L2, (void *)&TaskData[2], &TaskStk[2][TASK_STACKSIZE - 1], 5);
+#elif SCENARIO == 2
+  OSTaskCreate(S2_H, (void *)&TaskData[0], &TaskStk[0][TASK_STACKSIZE - 1], 3);
+  OSTaskCreate(S2_L, (void *)&TaskData[1], &TaskStk[1][TASK_STACKSIZE - 1], 4);
+#endif
+  OSTaskCreate(print, (void *)0, &TaskStk[N_TASKS][TASK_STACKSIZE - 1], 10);
 
   OSTimeSet(0);
   OSStart();
