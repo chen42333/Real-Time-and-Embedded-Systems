@@ -51,6 +51,12 @@ extern "C" {
 *********************************************************************************************************
 */
 
+
+#define BOARD 1
+#define COMPLETE 1
+#define PREEMPT 2
+#define EXCEED 3
+
 #ifdef   OS_GLOBALS
 #define  OS_EXT
 #else
@@ -656,6 +662,8 @@ typedef struct os_tcb {
 #if OS_TASK_NAME_SIZE > 1
     INT8U            OSTCBTaskName[OS_TASK_NAME_SIZE];
 #endif
+
+    int          compTime, deadline;           // for Lab1
 } OS_TCB;
 
 /*$PAGE*/
@@ -789,6 +797,16 @@ OS_EXT  OS_TMR_WHEEL      OSTmrWheelTbl[OS_TMR_CFG_WHEEL_SIZE];
 #endif
 
 extern  INT8U   const     OSUnMapTbl[256];          /* Priority->Index    lookup table                 */
+
+// for lab1
+struct info{
+    long time;
+    int event;
+    INT8U from, to;
+};
+#define INFO_BUF_SIZE 256
+OS_EXT struct info info_buf[];
+OS_EXT int info_head, info_tail;
 
 /*$PAGE*/
 /*
@@ -1231,6 +1249,10 @@ INT8U        OSTmrSignal              (void);
 *                                             MISCELLANEOUS
 *********************************************************************************************************
 */
+
+// for lab1
+BOOLEAN       push_info(int event, INT8U from, INT8U to);
+BOOLEAN       pop_info(long* time, int* event, INT8U* from, INT8U* to);
 
 void          OSInit                  (void);
 

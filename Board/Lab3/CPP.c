@@ -33,56 +33,63 @@
 
 /* Definition of Task Stacks */
 #define   TASK_STACKSIZE       2048
-OS_STK    task1_stk[TASK_STACKSIZE];
-OS_STK    task2_stk[TASK_STACKSIZE];
+
+#define TASKSET 1
+#if TASKSET == 0
+  #define N_TASKS 2
+  INT16U TaskSet[N_TASKS][2] = {{1,3}, {3,5}};
+#elif TASKSET == 1
+  #define N_TASKS 3
+  INT16U TaskSet[N_TASKS][2] = {{1,4}, {2,5}, {2,10}};
+#endif
+
+OS_STK        TaskStk[N_TASKS][TASK_STACKSIZE];        /* Tasks stacks                                  */
+INT8U         TaskData[N_TASKS];                      /* Parameters to pass to each task               */
 
 /* Definition of Task Priorities */
 
-#define TASK1_PRIORITY      1
-#define TASK2_PRIORITY      2
 
-/* Prints "Hello World" and sleeps for three seconds */
-void task1(void* pdata)
+void  Task (void *pdata)
 {
-  while (1)
-  { 
-    printf("Hello from task1\n");
-    OSTimeDlyHMSM(0, 0, 3, 0);
+  int toDelay;
+  int id = *(INT8U*)pdata;
+  int c = TaskSet[id][0];
+  int p = TaskSet[id][1];
+  long time; int event; INT8U from, to;
+
+  while (1) {
+    while (OSTCBCur->compTime > 0);
+    while (pop_info(&time, &event, &from, &to)) {
+      if (event == EXCEED) {
+        printf("time:%lu task%hhu exceed deadline\n", time, from);
+        OSSchedLock();
+        for (;;);
+      } else {
+        printf("%lu\t%s\t%2hhu\t%2hhu\n",
+                time, event == COMPLETE ? "Complete" : "Preempt", from, to);
+      }
+    }
+
+    toDelay = OSTCBCur->deadline - OSTimeGet();
+    OSTCBCur->compTime = c;
+    OSTCBCur->deadline += p;
+    if (toDelay >= 0) OSTimeDly(toDelay);
   }
 }
-/* Prints "Hello World" and sleeps for three seconds */
-void task2(void* pdata)
-{
-  while (1)
-  { 
-    printf("Hello from task2\n");
-    OSTimeDlyHMSM(0, 0, 3, 0);
-  }
-}
+
 /* The main function creates two task and starts multi-tasking */
 int main(void)
 {
-  
-  OSTaskCreateExt(task1,
-                  NULL,
-                  (void *)&task1_stk[TASK_STACKSIZE-1],
-                  TASK1_PRIORITY,
-                  TASK1_PRIORITY,
-                  task1_stk,
-                  TASK_STACKSIZE,
-                  NULL,
-                  0);
-              
-               
-  OSTaskCreateExt(task2,
-                  NULL,
-                  (void *)&task2_stk[TASK_STACKSIZE-1],
-                  TASK2_PRIORITY,
-                  TASK2_PRIORITY,
-                  task2_stk,
-                  TASK_STACKSIZE,
-                  NULL,
-                  0);
+  OSInit();
+  INT8U i;
+  for (i = 0; i < N_TASKS; i++) {
+    TaskData[i] = i;
+    OSTaskCreate(Task, (void *)&TaskData[i], &TaskStk[i][TASK_STACKSIZE - 1], i + 1);
+    OSTCBPrioTbl[i+1]->compTime = TaskSet[i][0];
+    OSTCBPrioTbl[i+1]->deadline = TaskSet[i][1];
+  }
+
+  OSTimeSet(0);
   OSStart();
   return 0;
 }
