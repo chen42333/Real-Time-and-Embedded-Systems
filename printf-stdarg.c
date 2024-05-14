@@ -25,9 +25,10 @@
 
 */
 
-#define putchar(c) c
+// #define putchar(c) c
 
 #include <stdarg.h>
+#include <stdio.h>
 
 static int tiny_print( char **out, const char *format, va_list args, unsigned int buflen );
 
@@ -213,6 +214,7 @@ int printf(const char *format, ...)
         return tiny_print( 0, format, args, 0 );
 }
 
+/*
 int sprintf(char *out, const char *format, ...)
 {
         va_list args;
@@ -231,6 +233,7 @@ int snprintf( char *buf, unsigned int count, const char *format, ... )
         va_start( args, format );
         return tiny_print( &buf, format, args, count );
 }
+*/
 
 
 #ifdef TEST_PRINTF
@@ -302,6 +305,7 @@ int main(void)
 
 
 /* To keep linker happy. */
+/*
 int	write( int i, char* c, int n)
 {
 	(void)i;
@@ -309,4 +313,5 @@ int	write( int i, char* c, int n)
 	(void)c;
 	return 0;
 }
+*/
 
