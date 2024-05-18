@@ -69,6 +69,7 @@
 
 /* Standard demo includes. */
 #include "partest.h"
+#include <stdio.h>
 
 /* Priorities at which the tasks are created. */
 #define mainQUEUE_RECEIVE_TASK_PRIORITY		( tskIDLE_PRIORITY + 2 )
@@ -86,6 +87,16 @@ the queue empty. */
 /* The LED toggled by the Rx task. */
 #define mainTASK_LED						( 0 )
 
+#define TASKSET 0
+#if TASKSET == 0
+	#define N_TASKS 2
+	int TaskSet[N_TASKS][2] = {{1,3}, {3,5}};
+#elif TASKSET == 1
+	#define N_TASKS 3
+	int TaskSet[N_TASKS][2] = {{1,4}, {2,5}, {2,10}};
+#endif
+
+
 /*-----------------------------------------------------------*/
 
 /*
@@ -99,6 +110,7 @@ void main_blinky( void );
  */
 static void prvQueueReceiveTask( void *pvParameters );
 static void prvQueueSendTask( void *pvParameters );
+static void periodicTask( void *pvParameters );
 
 /*-----------------------------------------------------------*/
 
@@ -109,25 +121,23 @@ static QueueHandle_t xQueue = NULL;
 
 void main_blinky( void )
 {
-	/* Create the queue. */
-	xQueue = xQueueCreate( mainQUEUE_LENGTH, sizeof( uint32_t ) );
+	printf("Taskset %d\n", TASKSET);
 
-	if( xQueue != NULL )
-	{
-		/* Start the two tasks as described in the comments at the top of this
-		file. */
-		xTaskCreate( prvQueueReceiveTask,				/* The function that implements the task. */
-					"Rx", 								/* The text name assigned to the task - for debug only as it is not used by the kernel. */
-					configMINIMAL_STACK_SIZE, 			/* The size of the stack to allocate to the task. */
-					NULL, 								/* The parameter passed to the task - not used in this case. */
-					mainQUEUE_RECEIVE_TASK_PRIORITY, 	/* The priority assigned to the task. */
-					NULL );								/* The task handle is not required, so NULL is passed. */
-
-		xTaskCreate( prvQueueSendTask, "TX", configMINIMAL_STACK_SIZE, NULL, mainQUEUE_SEND_TASK_PRIORITY, NULL );
-
-		/* Start the tasks and timer running. */
-		vTaskStartScheduler();
+	int i;
+	for (i = 0; i < N_TASKS; i++) {
+		char name[2] = { i+1, 0 };
+		xTaskCreate(
+			periodicTask,
+			name,
+			configMINIMAL_STACK_SIZE,
+			(void*)i,
+			EDF_TASK_PRIO,
+			NULL
+		);
 	}
+
+	/* Start the tasks and timer running. */
+	vTaskStartScheduler();
 
 	/* If all is well, the scheduler will now be running, and the following
 	line will never be reached.  If the following line does execute, then
@@ -138,6 +148,41 @@ void main_blinky( void )
 	for( ;; );
 }
 /*-----------------------------------------------------------*/
+
+static void periodicTask (void *pdata)
+{
+	int toDelay;
+	int id = (int)pdata;
+	int c = TaskSet[id][0];
+	int p = TaskSet[id][1];
+	int time, event, from, to;
+
+    printf("T%d c:%d p:%d\n", id, c, p);
+
+	task_set_deadline(xTaskGetTickCount() + p);
+	task_set_comptime(c);
+
+	while (1) {
+		while (task_get_comptime() > 0);
+		while (pop_info(&time, &event, &from, &to)) {
+            switch (event) {
+            case PREEMPT:
+            case COMPLETE:
+				printf("%d\t%s\t%d\t%d\n", time, event == PREEMPT ? "Preempt" : "Complete", from, to);
+                break;
+            case EXCEED:
+				printf("time:%d task%d exceed deadline\n", time, from);
+				for (;;);
+            }
+		}
+
+		toDelay = task_get_deadline() - xTaskGetTickCount();
+		task_set_comptime(c);
+		task_set_deadline(task_get_deadline() + p);
+        printf("T%d complete / delay %d\n", id, toDelay);
+		if (toDelay >= 0) vTaskDelay(toDelay);
+	}
+}
 
 static void prvQueueSendTask( void *pvParameters )
 {
@@ -189,4 +234,3 @@ const unsigned long ulExpectedValue = 100UL;
 	}
 }
 /*-----------------------------------------------------------*/
-

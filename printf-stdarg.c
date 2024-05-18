@@ -167,7 +167,7 @@ static int tiny_print( char **out, const char *format, va_list args, unsigned in
 				width += *format - '0';
 			}
 			if( *format == 's' ) {
-				register char *s = (char *)va_arg( args, int );
+				register char *s = va_arg( args, char* );
 				pc += prints (out, s?s:"(null)", width, pad, buflimit);
 				continue;
 			}
