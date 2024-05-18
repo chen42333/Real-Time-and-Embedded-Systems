@@ -42,6 +42,20 @@
 #endif
 /* *INDENT-ON* */
 
+#define PREEMPT 0
+#define COMPLETE 1
+#define EXCEED 2
+#define EDF_TASK_PRIO (tskIDLE_PRIORITY + 3)
+struct info{
+    int time, event, from, to;
+};
+int       push_info(int event, int from, int to);
+int       pop_info(int* time, int* event, int* from, int* to);
+int task_get_deadline();
+int task_get_comptime();
+void task_set_deadline(int);
+void task_set_comptime(int);
+
 /*-----------------------------------------------------------
 * MACROS AND DEFINITIONS
 *----------------------------------------------------------*/
@@ -52,7 +66,7 @@
  *
  * The tskKERNEL_VERSION_MAJOR, tskKERNEL_VERSION_MINOR, tskKERNEL_VERSION_BUILD
  * values will reflect the last released version number.
- */ 
+ */
 #define tskKERNEL_VERSION_NUMBER       "V10.4.4"
 #define tskKERNEL_VERSION_MAJOR        10
 #define tskKERNEL_VERSION_MINOR        4

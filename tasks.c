@@ -115,6 +115,11 @@
     #define configIDLE_TASK_NAME    "IDLE"
 #endif
 
+#define INFO_BUF_SIZE 256
+
+struct info info_buf[INFO_BUF_SIZE];
+int info_head = 0, info_tail = 0;
+
 #if ( configUSE_PORT_OPTIMISED_TASK_SELECTION == 0 )
 
 /* If configUSE_PORT_OPTIMISED_TASK_SELECTION is 0 then task selection is
@@ -146,7 +151,10 @@
                                                                               \
         /* listGET_OWNER_OF_NEXT_ENTRY indexes through the list, so the tasks of \
          * the  same priority get an equal share of the processor time. */                    \
-        listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB, &( pxReadyTasksLists[ uxTopPriority ] ) ); \
+        if (uxTopPriority == EDF_TASK_PRIO) \
+            EDF_Select(); \
+        else \
+            listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB, &( pxReadyTasksLists[ uxTopPriority ] ) ); \
         uxTopReadyPriority = uxTopPriority;                                                   \
     } /* taskSELECT_HIGHEST_PRIORITY_TASK */
 
@@ -328,6 +336,8 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
     #if ( configUSE_POSIX_ERRNO == 1 )
         int iTaskErrno;
     #endif
+
+    uint32_t deadline, comptime;
 } tskTCB;
 
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
@@ -826,6 +836,9 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 {
     StackType_t * pxTopOfStack;
     UBaseType_t x;
+
+    pxNewTCB->comptime = 0;
+    pxNewTCB->deadline = 0;
 
     #if ( portUSING_MPU_WRAPPERS == 1 )
         /* Should the task be created in privileged mode? */
@@ -2729,6 +2742,29 @@ BaseType_t xTaskIncrementTick( void )
     TCB_t * pxTCB;
     TickType_t xItemValue;
     BaseType_t xSwitchRequired = pdFALSE;
+
+    {
+        ListItem_t * pxListItem, * pxNext;
+        ListItem_t * pxListEnd;
+        TCB_t *tmp;
+        List_t * pxList;
+
+        pxList = &pxReadyTasksLists[ EDF_TASK_PRIO ];
+
+        pxListEnd = listGET_END_MARKER( pxList );
+        pxListItem = listGET_HEAD_ENTRY( pxList );
+        while (pxListItem != pxListEnd) {
+            pxNext = listGET_NEXT( pxListItem );
+
+            tmp = listGET_LIST_ITEM_OWNER( pxListItem );
+            if (tmp->deadline != 0 && tmp->deadline < xTickCount) {
+                push_info(EXCEED, tmp->pcTaskName[0], 0);
+            }
+
+            pxListItem = pxNext;
+        }
+        pxCurrentTCB->comptime--;
+    }
 
     /* Called by the portable layer each time a tick interrupt occurs.
      * Increments the tick then checks to see if the new tick value will cause any
@@ -5404,3 +5440,86 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
     #endif
 
 #endif /* if ( configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1 ) */
+
+
+int push_info(int event, int from, int to) {
+    int ret;
+
+    taskENTER_CRITICAL()
+    if (info_tail+1 == info_head) {
+    	ret = 0;
+    } else {
+    	ret = 1;
+        info_buf[info_tail].time = xTickCount;
+		info_buf[info_tail].event = event;
+		info_buf[info_tail].from  = from;
+		info_buf[info_tail].to    = to;
+		if (++info_tail == INFO_BUF_SIZE) info_tail = 0;
+    }
+    taskEXIT_CRITICAL()
+    return ret;
+}
+
+int pop_info(int* time, int* event, int* from, int* to) {
+    int ret;
+
+    taskENTER_CRITICAL()
+    if (info_head == info_tail) {
+    	ret = 0;
+    } else {
+    	ret = 1;
+		*time  = info_buf[info_head].time;
+		*event = info_buf[info_head].event;
+		*from  = info_buf[info_head].from;
+		*to    = info_buf[info_head].to;
+		if (++info_head == INFO_BUF_SIZE) info_head = 0;
+    }
+    taskEXIT_CRITICAL();
+    return ret;
+}
+
+int task_get_deadline() {
+    return pxCurrentTCB->deadline;
+}
+int task_get_comptime() {
+    return pxCurrentTCB->comptime;
+}
+void task_set_deadline(int d) {
+    pxCurrentTCB->deadline = d;
+}
+void task_set_comptime(int c) {
+    pxCurrentTCB->comptime = c;
+}
+
+void EDF_Select() {
+    ListItem_t * pxListItem, * pxNext;
+    ListItem_t * pxListEnd;
+    TCB_t *ret = NULL, *tmp;
+    List_t * pxList;
+
+    pxList = &( pxReadyTasksLists[ EDF_TASK_PRIO ] );
+
+    pxListEnd = listGET_END_MARKER( pxList );
+    pxListItem = listGET_HEAD_ENTRY( pxList );
+    while (pxListItem != pxListEnd) {
+        pxNext = listGET_NEXT( pxListItem );
+
+        tmp = listGET_LIST_ITEM_OWNER( pxListItem );
+        if (ret == NULL || tmp->deadline < ret->deadline)
+            ret = tmp;
+
+        pxListItem = pxNext;
+    }
+
+    if (ret != pxCurrentTCB) {
+        int e;
+        if (listIS_CONTAINED_WITHIN(&pxDelayedTaskList, &ret->xEventListItem)) {
+            e = COMPLETE;
+        } else {
+            e = PREEMPT;
+        }
+        push_info(e, pxCurrentTCB->pcTaskName[0], ret->pcTaskName[0]);
+
+        pxCurrentTCB = ret;
+    }
+}
