@@ -211,7 +211,9 @@ int printf(const char *format, ...)
         va_list args;
 
         va_start( args, format );
-        return tiny_print( 0, format, args, 0 );
+        int r = tiny_print( 0, format, args, 0 );
+        va_end (args);
+        return r;
 }
 
 /*

@@ -111,6 +111,7 @@ void main_blinky( void );
 static void prvQueueReceiveTask( void *pvParameters );
 static void prvQueueSendTask( void *pvParameters );
 static void periodicTask( void *pvParameters );
+static void idleTask(void*);
 
 /*-----------------------------------------------------------*/
 
@@ -140,6 +141,15 @@ void main_blinky( void )
 		);
 	}
 
+    xTaskCreate(
+        idleTask,
+        "Idle",
+        configMINIMAL_STACK_SIZE,
+        NULL,
+        tskIDLE_PRIORITY + 1,
+        NULL
+    );
+
 	/* Start the tasks and timer running. */
 	vTaskStartScheduler();
 
@@ -159,7 +169,6 @@ static void periodicTask (void *pdata)
 	int id = (int)(long)pdata;
 	int c = TaskSet[id][0];
 	int p = TaskSet[id][1];
-	int time, event; char *from, *to;
 
 	task_set_deadline(p);
 	task_set_comptime(c);
@@ -167,28 +176,30 @@ static void periodicTask (void *pdata)
 
 	while (1) {
 		while (task_get_comptime() > 0);
-		while (pop_info(&time, &event, &from, &to)) {
-            switch (event) {
-            case PREEMPT:
-                // printf("p");
-                break;
-            case COMPLETE:
-                // printf("c");
-				// printf("%d\t%s\t%s\t%s\n", time, event == PREEMPT ? "Preempt" : "Complete", from, to);
-                break;
-            case EXCEED:
-				printf("time:%d %s exceed deadline\n", time, from);
-				for (;;);
-            }
-		}
-
-        printf("%d: t%d c\n", xTaskGetTickCount(), id+1);
+        // printf("%d: t%d c %d %d %d\n", xTaskGetTickCount(), id+1, id+1, 12345, 5);
 		toDelay = task_get_deadline() - xTaskGetTickCount();
         // printf("T%d complete / delay %d / time %d\n", id + 1, toDelay, xTaskGetTickCount());
 		task_set_comptime(c);
 		task_set_deadline(task_get_deadline() + p);
 		if (toDelay >= 0) vTaskDelay(toDelay);
 	}
+}
+
+static void idleTask(void* x) {
+	int time, event; char *from, *to;
+    while (1) {
+		while (pop_info(&time, &event, &from, &to)) {
+            switch (event) {
+            case PREEMPT:
+            case COMPLETE:
+                printf("%d\t%s\t%s\t%s\n", time, event == PREEMPT ? "Preempt\t" : "Complete", from, to);
+                break;
+            case EXCEED:
+				printf("time:%d %s exceed deadline\n", time, from);
+				for (;;);
+            }
+		}
+    }
 }
 
 static void prvQueueSendTask( void *pvParameters )
