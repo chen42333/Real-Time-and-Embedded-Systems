@@ -115,7 +115,7 @@
     #define configIDLE_TASK_NAME    "IDLE"
 #endif
 
-#define INFO_BUF_SIZE 256
+#define INFO_BUF_SIZE 30
 
 struct info info_buf[INFO_BUF_SIZE];
 int info_head = 0, info_tail = 0;
@@ -151,10 +151,7 @@ int info_head = 0, info_tail = 0;
                                                                               \
         /* listGET_OWNER_OF_NEXT_ENTRY indexes through the list, so the tasks of \
          * the  same priority get an equal share of the processor time. */                    \
-        if (uxTopPriority == EDF_TASK_PRIO) \
-            EDF_Select(); \
-        else \
-            listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB, &( pxReadyTasksLists[ uxTopPriority ] ) ); \
+        listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB, &( pxReadyTasksLists[ uxTopPriority ] ) ); \
         uxTopReadyPriority = uxTopPriority;                                                   \
     } /* taskSELECT_HIGHEST_PRIORITY_TASK */
 
@@ -337,7 +334,7 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
         int iTaskErrno;
     #endif
 
-    uint32_t deadline, comptime;
+    int deadline, comptime;
 } tskTCB;
 
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
@@ -2745,7 +2742,7 @@ BaseType_t xTaskIncrementTick( void )
 
     {
         ListItem_t * pxListItem, * pxNext;
-        ListItem_t * pxListEnd;
+        const ListItem_t * pxListEnd;
         TCB_t *tmp;
         List_t * pxList;
 
@@ -2758,7 +2755,7 @@ BaseType_t xTaskIncrementTick( void )
 
             tmp = listGET_LIST_ITEM_OWNER( pxListItem );
             if (tmp->deadline != 0 && tmp->deadline < xTickCount) {
-                push_info(EXCEED, tmp->pcTaskName[0], 0);
+                push_info(EXCEED, tmp->pcTaskName, NULL);
             }
 
             pxListItem = pxNext;
@@ -3098,7 +3095,42 @@ void vTaskSwitchContext( void )
 
         /* Select a new task to run using either the generic C or port
          * optimised asm code. */
-        taskSELECT_HIGHEST_PRIORITY_TASK(); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+        TCB_t* prevTCB = pxCurrentTCB;
+
+        // taskSELECT_HIGHEST_PRIORITY_TASK(); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+
+
+        {
+            UBaseType_t uxTopPriority = uxTopReadyPriority;
+
+            /* Find the highest priority queue that contains ready tasks. */
+            while( listLIST_IS_EMPTY( &( pxReadyTasksLists[ uxTopPriority ] ) ) ) {
+                configASSERT( uxTopPriority );
+                --uxTopPriority;
+            }
+
+            /* listGET_OWNER_OF_NEXT_ENTRY indexes through the list, so the tasks of \
+             * the  same priority get an equal share of the processor time. */
+            if (uxTopPriority == EDF_TASK_PRIO)
+                EDF_Select();
+            else
+                listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB, &( pxReadyTasksLists[ uxTopPriority ] ) );
+            uxTopReadyPriority = uxTopPriority;
+        }
+
+
+        if (prevTCB != pxCurrentTCB) {
+            int e;
+            eTaskState state = eTaskGetState(prevTCB);
+            if (state == eBlocked) {
+                e = COMPLETE;
+            } else {
+                e = PREEMPT;
+            }
+            push_info(e, prevTCB->pcTaskName, pxCurrentTCB->pcTaskName);
+        }
+
+
         traceTASK_SWITCHED_IN();
 
         /* After the new task is switched in, update the global errno. */
@@ -5442,7 +5474,7 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
 #endif /* if ( configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1 ) */
 
 
-int push_info(int event, int from, int to) {
+int push_info(int event, char* from, char* to) {
     int ret;
 
     taskENTER_CRITICAL()
@@ -5460,7 +5492,7 @@ int push_info(int event, int from, int to) {
     return ret;
 }
 
-int pop_info(int* time, int* event, int* from, int* to) {
+int pop_info(int* time, int* event, char** from, char** to) {
     int ret;
 
     taskENTER_CRITICAL()
@@ -5493,7 +5525,7 @@ void task_set_comptime(int c) {
 
 void EDF_Select() {
     ListItem_t * pxListItem, * pxNext;
-    ListItem_t * pxListEnd;
+    const ListItem_t * pxListEnd;
     TCB_t *ret = NULL, *tmp;
     List_t * pxList;
 
@@ -5512,14 +5544,6 @@ void EDF_Select() {
     }
 
     if (ret != pxCurrentTCB) {
-        int e;
-        if (listIS_CONTAINED_WITHIN(&pxDelayedTaskList, &ret->xEventListItem)) {
-            e = COMPLETE;
-        } else {
-            e = PREEMPT;
-        }
-        push_info(e, pxCurrentTCB->pcTaskName[0], ret->pcTaskName[0]);
-
         pxCurrentTCB = ret;
     }
 }

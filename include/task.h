@@ -47,14 +47,16 @@
 #define EXCEED 2
 #define EDF_TASK_PRIO (tskIDLE_PRIORITY + 3)
 struct info{
-    int time, event, from, to;
+    int time, event;
+    char *from, *to;
 };
-int       push_info(int event, int from, int to);
-int       pop_info(int* time, int* event, int* from, int* to);
+int       push_info(int event, char* from, char* to);
+int       pop_info(int* time, int* event, char** from, char** to);
 int task_get_deadline();
 int task_get_comptime();
 void task_set_deadline(int);
 void task_set_comptime(int);
+void EDF_Select();
 
 /*-----------------------------------------------------------
 * MACROS AND DEFINITIONS
