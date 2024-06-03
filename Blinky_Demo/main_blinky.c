@@ -124,11 +124,15 @@ void main_blinky( void )
 	printf("Taskset %d\n", TASKSET);
 
 	int i;
+    char name[N_TASKS][3];
 	for (i = 0; i < N_TASKS; i++) {
-		char name[2] = { i+1, 0 };
+        name[i][0] = 'T';
+        name[i][1] = '1' + i;
+        name[i][2] = 0;
+        printf("T%d c:%d p:%d start\n", i + 1, TaskSet[i][0], TaskSet[i][1]);
 		xTaskCreate(
 			periodicTask,
-			name,
+			name[i],
 			configMINIMAL_STACK_SIZE,
 			(void*)i,
 			EDF_TASK_PRIO,
@@ -152,34 +156,37 @@ void main_blinky( void )
 static void periodicTask (void *pdata)
 {
 	int toDelay;
-	int id = (int)pdata;
+	int id = (int)(long)pdata;
 	int c = TaskSet[id][0];
 	int p = TaskSet[id][1];
-	int time, event, from, to;
+	int time, event; char *from, *to;
 
-    printf("T%d c:%d p:%d\n", id, c, p);
-
-	task_set_deadline(xTaskGetTickCount() + p);
+	task_set_deadline(p);
 	task_set_comptime(c);
+    vTaskDelay(0);
 
 	while (1) {
 		while (task_get_comptime() > 0);
 		while (pop_info(&time, &event, &from, &to)) {
             switch (event) {
             case PREEMPT:
+                // printf("p");
+                break;
             case COMPLETE:
-				printf("%d\t%s\t%d\t%d\n", time, event == PREEMPT ? "Preempt" : "Complete", from, to);
+                // printf("c");
+				// printf("%d\t%s\t%s\t%s\n", time, event == PREEMPT ? "Preempt" : "Complete", from, to);
                 break;
             case EXCEED:
-				printf("time:%d task%d exceed deadline\n", time, from);
+				printf("time:%d %s exceed deadline\n", time, from);
 				for (;;);
             }
 		}
 
+        printf("%d: t%d c\n", xTaskGetTickCount(), id+1);
 		toDelay = task_get_deadline() - xTaskGetTickCount();
+        // printf("T%d complete / delay %d / time %d\n", id + 1, toDelay, xTaskGetTickCount());
 		task_set_comptime(c);
 		task_set_deadline(task_get_deadline() + p);
-        printf("T%d complete / delay %d\n", id, toDelay);
 		if (toDelay >= 0) vTaskDelay(toDelay);
 	}
 }
