@@ -213,12 +213,18 @@ static void idleTask(void* x) {
 #endif
 
 #if LAB == 5
-int index = 0;
+#pragma PERSISTENT(seed)
+int index = 0, seed = 0x1040;
+int random() {
+    srand(seed);
+    return seed = rand();
+}
+
 static void testTask(void* x) {
-    srand(0x1040);
+    printf("test task start\n");
     while (++index) {
         printf("%d\n", index);
-        if (rand() % 20 == 0) {
+        if (random() % 10 == 0) {
             printf("power_off\n");
             power_off();
         }
