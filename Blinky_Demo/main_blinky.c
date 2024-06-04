@@ -71,6 +71,10 @@
 #include "partest.h"
 #include <stdio.h>
 
+#define LAB 4
+
+#ifdef LAB == 4
+
 #define TASKSET 0
 #if TASKSET == 0
 	#define N_TASKS 2
@@ -78,6 +82,8 @@
 #elif TASKSET == 1
 	#define N_TASKS 3
 	int TaskSet[N_TASKS][2] = {{1,4}, {2,5}, {2,10}};
+#endif
+
 #endif
 
 
@@ -92,11 +98,15 @@ void main_blinky( void );
 /*
  * The tasks as described in the comments at the top of this file.
  */
+#ifdef LAB == 4
 static void periodicTask( void *pvParameters );
 static void idleTask(void*);
+#endif
 
 void main_blinky( void )
 {
+
+#ifdef LAB == 4
 	printf("Taskset %d\n", TASKSET);
 
 	int i;
@@ -124,6 +134,7 @@ void main_blinky( void )
         tskIDLE_PRIORITY + 1,
         NULL
     );
+#endif
 
 	/* Start the tasks and timer running. */
 	vTaskStartScheduler();
@@ -138,6 +149,7 @@ void main_blinky( void )
 }
 /*-----------------------------------------------------------*/
 
+#ifdef LAB == 4
 static void periodicTask (void *pdata)
 {
 	int toDelay;
@@ -176,4 +188,4 @@ static void idleTask(void* x) {
 		}
     }
 }
-
+#endif
