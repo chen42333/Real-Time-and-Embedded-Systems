@@ -11,13 +11,12 @@
 #endif
 /* *INDENT-ON* */
 
-void power_off();
-
 extern void commit();
 extern void commit_leave();
 extern void restore();
 extern void restore_leave();
 
+void power_off();
 void commit_c();
 void restore_c();
 
