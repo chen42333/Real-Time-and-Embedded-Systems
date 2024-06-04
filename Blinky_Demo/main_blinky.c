@@ -66,14 +66,16 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "checkpoint.h"
 
 /* Standard demo includes. */
 #include "partest.h"
 #include <stdio.h>
+#include <stdlib.h>
 
-#define LAB 4
+#define LAB 5
 
-#ifdef LAB == 4
+#if LAB == 4
 
 #define TASKSET 0
 #if TASKSET == 0
@@ -98,15 +100,19 @@ void main_blinky( void );
 /*
  * The tasks as described in the comments at the top of this file.
  */
-#ifdef LAB == 4
+#if LAB == 4
 static void periodicTask( void *pvParameters );
 static void idleTask(void*);
+#endif
+
+#if LAB == 5
+static void testTask(void*);
 #endif
 
 void main_blinky( void )
 {
 
-#ifdef LAB == 4
+#if LAB == 4
 	printf("Taskset %d\n", TASKSET);
 
 	int i;
@@ -136,6 +142,18 @@ void main_blinky( void )
     );
 #endif
 
+#if LAB == 5
+    restore();
+    xTaskCreate(
+        testTask,
+        "test",
+        configMINIMAL_STACK_SIZE,
+        NULL,
+        tskIDLE_PRIORITY + 2,
+        NULL
+    );
+#endif
+
 	/* Start the tasks and timer running. */
 	vTaskStartScheduler();
 
@@ -149,7 +167,7 @@ void main_blinky( void )
 }
 /*-----------------------------------------------------------*/
 
-#ifdef LAB == 4
+#if LAB == 4
 static void periodicTask (void *pdata)
 {
 	int toDelay;
@@ -186,6 +204,18 @@ static void idleTask(void* x) {
 				for (;;);
             }
 		}
+    }
+}
+#endif
+
+#if LAB == 5
+static void testTask(void* x) {
+    srand(0x1040);
+    int i = 0;
+    while (++i) {
+        if (rand() % 20 == 0) power_off();
+        if (i % 10 == 0) commit();
+        printf("%d\n", i);
     }
 }
 #endif
