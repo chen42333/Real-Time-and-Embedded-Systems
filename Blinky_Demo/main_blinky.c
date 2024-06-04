@@ -107,6 +107,7 @@ static void idleTask(void*);
 
 #if LAB == 5
 static void testTask(void*);
+int wait_for_debugger = 1;
 #endif
 
 void main_blinky( void )
@@ -143,6 +144,9 @@ void main_blinky( void )
 #endif
 
 #if LAB == 5
+    while (wait_for_debugger);
+    wait_for_debugger = 1;
+
     restore();
     xTaskCreate(
         testTask,
@@ -209,13 +213,19 @@ static void idleTask(void* x) {
 #endif
 
 #if LAB == 5
+int index = 0;
 static void testTask(void* x) {
     srand(0x1040);
-    int i = 0;
-    while (++i) {
-        if (rand() % 20 == 0) power_off();
-        if (i % 10 == 0) commit();
-        printf("%d\n", i);
+    while (++index) {
+        printf("%d\n", index);
+        if (rand() % 20 == 0) {
+            printf("power_off\n");
+            power_off();
+        }
+        if (index % 10 == 0) {
+            printf("commit\n");
+            commit();
+        }
     }
 }
 #endif
